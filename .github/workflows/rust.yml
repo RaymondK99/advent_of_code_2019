@@ -21,4 +21,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run scenario
-        run: cargo run < test_input1.txt
+        run: cargo run < input_1.txt
