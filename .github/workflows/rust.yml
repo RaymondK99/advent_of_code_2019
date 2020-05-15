@@ -20,5 +20,6 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Run scenario
         run: cargo run < input_1.txt
