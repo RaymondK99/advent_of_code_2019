@@ -1,36 +1,33 @@
-use std::io;
 use std::io::prelude::*;
+use std::env;
+
+mod util;
+
+use util::*;
 
 fn main() {
 
+    let args: Vec<String> = env::args().collect();
 
-    let stdin = io::stdin();
-
-    let mut masses:Vec<u64> = vec!();
-
-    for line in stdin.lock().lines() {
-        masses.push( line.unwrap().trim().parse().unwrap());
+    if args.len() != 3 {
+        println!("program <day> <part>");
+        std::process::exit(1);
     }
 
-    println!("{}",sum_fuel(masses));
-}
+    // Read arguments
+    let day = args[1].parse::<u8>().unwrap();
+    let part = match args[2].parse::<u8>() {
+        Ok(1) => Part::Part1,
+        Ok(2) => Part::Part2,
+        _ => panic!("illegal part arguments!")
+    };
 
-fn sum_fuel(masses : Vec<u64>) -> u64 {
-    masses.iter().map(|mass|  (mass / 3 - 2)).sum()
-}
+    // Read input
+    let mut input = String::new();
+    std::io::stdin().read_to_string(&mut input).expect("Failed to fetch input...");
 
-#[cfg(test)]
-mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
-    use super::*;
+    let result = get_solution(day, part, input);
 
-
-    #[test]
-    fn test1() {
-
-        let masses = vec![12,14,1969,100756,22,121,23323,232];
-
-        println!("{}", sum_fuel(masses));
-    }
+    println!("{}",result);
 
 }
