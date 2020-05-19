@@ -1,7 +1,7 @@
 [package]
-name = "advent_01"
+name = "advent_of_code_2019"
 version = "0.1.0"
-authors = ["raymondk <raymond@kth.se>"]
+authors = ["raymondk <raymond.kalander@gmail.se>"]
 edition = "2018"
 
 [dependencies]
