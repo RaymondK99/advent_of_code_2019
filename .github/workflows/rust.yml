@@ -22,4 +22,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run scenario
-        run: cargo run < input_1.txt
+        run: cargo run 1 1 < input_1.txt
