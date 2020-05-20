@@ -19,7 +19,7 @@ fn part1(opcodes:Vec<i32>) -> String {
     let mut inputs = vec![1];
     let mut outputs = vec![];
 
-    let opcodes_out = int_codes(&mut inputs, &mut outputs, opcodes);
+    int_codes(&mut inputs, &mut outputs, opcodes);
 
     outputs.last().unwrap().to_string()
 }
@@ -30,7 +30,7 @@ fn part2(opcodes:Vec<i32>) -> String {
     let mut inputs = vec![5];
     let mut outputs = vec![];
 
-    let opcodes_out = int_codes(&mut inputs, &mut outputs, opcodes);
+    int_codes(&mut inputs, &mut outputs, opcodes);
 
     outputs.last().unwrap().to_string()
 }
@@ -132,7 +132,7 @@ fn int_codes(inputs:&mut Vec<i32>, outputs:&mut Vec<i32>, mut opcodes : Vec<i32>
             };
 
             let jump = if opcode == 5 {
-                if (param1 > 0) {
+                if param1 > 0 {
                     println!(" => OP 5: {} > 0, set PC to {}", param1, param2);
                     true
                 } else {
