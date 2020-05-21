@@ -4,6 +4,7 @@ mod day_03;
 mod day_04;
 mod day_05;
 mod day_06;
+mod int_code_computer;
 
 pub enum Part {
     Part1,
