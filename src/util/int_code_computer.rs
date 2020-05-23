@@ -1,26 +1,5 @@
-use crate::util::int_code_computer::Operation::{ADD, MULT, GET_INPUT, PUSH_OUTPUT, UNKNOWN, HALT_PROGRAM, JMP_IF_EQUAL_TO_ZERO, JMP_IF_GREATER_THAN_ZERO, SET_IF_EQUAL, SET_IF_LESS_THAN};
-use std::io::{self, Write};
+use crate::util::int_code_computer::Operation::{Add, Mult, GetInput, PushOutput, Unknown, HaltProgram, JumpIfEqualToZero, JumpIfGreaterThanZero, SetIfEqual, SetIfLessThan};
 
-
-fn is_pos_mode(instr:i32, par_no:u32) -> bool {
-    !is_immediate_mode(instr, par_no)
-}
-
-fn is_immediate_mode(instruction:i32, par_no:u32) -> bool {
-    let mut par_args = (instruction - instruction % 100) / 100;
-    let mut i = 0;
-
-    while i < par_no && par_args > 0 {
-        if (i+1) == par_no && par_args % 2 == 1 {
-            return true;
-        }
-
-        par_args /= 10;
-        i += 1;
-    }
-
-    false
-}
 
 pub struct Program {
     pc:usize,
@@ -69,16 +48,16 @@ impl Program {
 
 #[derive(Debug)]
 enum Operation {
-    ADD{param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
-    MULT{param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
-    GET_INPUT{pos_out:i32},
-    PUSH_OUTPUT{param_mask:i32,pos_out:i32},
-    JMP_IF_GREATER_THAN_ZERO{param_mask:i32,arg1:i32,arg2:i32},
-    JMP_IF_EQUAL_TO_ZERO{param_mask:i32,arg1:i32,arg2:i32},
-    SET_IF_LESS_THAN{param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
-    SET_IF_EQUAL{param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
-    HALT_PROGRAM,
-    UNKNOWN,
+    Add {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
+    Mult {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
+    GetInput {pos_out:i32},
+    PushOutput {param_mask:i32,pos_out:i32},
+    JumpIfGreaterThanZero {param_mask:i32,arg1:i32,arg2:i32},
+    JumpIfEqualToZero {param_mask:i32,arg1:i32,arg2:i32},
+    SetIfLessThan {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
+    SetIfEqual {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
+    HaltProgram,
+    Unknown,
 }
 
 fn new_op(pc:usize, program:&Vec<i32>) -> Operation {
@@ -86,28 +65,28 @@ fn new_op(pc:usize, program:&Vec<i32>) -> Operation {
     let mask = (program[pc] - opcode) / 100;
 
     match opcode {
-        1 => ADD{param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
-        2 => MULT{param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
-        3 => GET_INPUT{pos_out:program[pc+1]},
-        4 => PUSH_OUTPUT{param_mask:mask, pos_out:program[pc+1]},
-        5 => JMP_IF_GREATER_THAN_ZERO{param_mask:mask,arg1:program[pc+1],arg2:program[pc+2]},
-        6 => JMP_IF_EQUAL_TO_ZERO{param_mask:mask,arg1:program[pc+1],arg2:program[pc+2]},
-        7 => SET_IF_LESS_THAN{param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
-        8 => SET_IF_EQUAL{param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
-        99 => HALT_PROGRAM,
-        _ => UNKNOWN,
+        1 => Add {param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
+        2 => Mult {param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
+        3 => GetInput {pos_out:program[pc+1]},
+        4 => PushOutput {param_mask:mask, pos_out:program[pc+1]},
+        5 => JumpIfGreaterThanZero {param_mask:mask,arg1:program[pc+1],arg2:program[pc+2]},
+        6 => JumpIfEqualToZero {param_mask:mask,arg1:program[pc+1],arg2:program[pc+2]},
+        7 => SetIfLessThan {param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
+        8 => SetIfEqual {param_mask:mask, arg1:program[pc+1], arg2:program[pc+2],pos_out:program[pc+3]},
+        99 => HaltProgram,
+        _ => Unknown,
     }
 }
 
 fn get_param_value(pc:&usize, mask:i32, par_num:usize, program:&Vec<i32>) -> i32 {
     let par_value = program[(pc + par_num) as usize];
-    match is_pos_mode2(mask, par_num) {
+    match is_pos_mode(mask, par_num) {
         true => program[par_value as usize],
         false => par_value,
     }
 }
 
-fn is_pos_mode2(mask:i32, num:usize) -> bool {
+fn is_pos_mode(mask:i32, num:usize) -> bool {
     let is_set = match num {
         1 => mask % 2 == 1,
         2 => (mask / 10) % 2 == 1,
@@ -121,37 +100,38 @@ fn is_pos_mode2(mask:i32, num:usize) -> bool {
 fn exec_op(pc:&mut usize, program:&mut Vec<i32>, inpusts:&mut Vec<i32>, outputs:&mut Vec<i32>) -> bool {
     let mut cont_execute = true;
     let op = new_op(*pc, program);
-    println!("{:?}",op);
+    //println!("pc = {}, opcode={}, op = {:?}",*pc, program[*pc], op);
     match op {
-        ADD{param_mask, arg1,arg2,pos_out} => {
+        Add {param_mask, arg1,arg2,pos_out} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
             let arg2_val = get_param_value(pc, param_mask, 2, program);
             *(&mut program[pos_out as usize]) = arg1_val + arg2_val;
+            //println!("Set pos:{} to:{}",pos_out, program[pos_out as usize]);
             *pc += 4;
 
         }
-        MULT{param_mask, arg1,arg2,pos_out} => {
+        Mult {param_mask, arg1,arg2,pos_out} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
             let arg2_val = get_param_value(pc, param_mask, 2, program);
 
             *(&mut program[pos_out as usize]) = arg1_val * arg2_val;
             *pc += 4;
         }
-        GET_INPUT{pos_out} => {
+        GetInput {pos_out} => {
             *(&mut program[pos_out as usize]) = inpusts.remove(0);
             *pc += 2;
         }
-        JMP_IF_GREATER_THAN_ZERO{param_mask,arg1,arg2} => {
+        JumpIfGreaterThanZero {param_mask,arg1,arg2} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
             let arg2_val = get_param_value(pc, param_mask, 2, program);
 
-            if arg1_val > 0 {
+            if arg1_val != 0 {
                 *pc = arg2_val as usize;
             } else {
                 *pc += 3;
             }
         },
-        JMP_IF_EQUAL_TO_ZERO{param_mask,arg1,arg2} => {
+        JumpIfEqualToZero {param_mask,arg1,arg2} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
             let arg2_val = get_param_value(pc, param_mask, 2, program);
 
@@ -161,7 +141,7 @@ fn exec_op(pc:&mut usize, program:&mut Vec<i32>, inpusts:&mut Vec<i32>, outputs:
                 *pc += 3;
             }
         },
-        SET_IF_LESS_THAN{param_mask,arg1,arg2, pos_out} => {
+        SetIfLessThan {param_mask,arg1,arg2, pos_out} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
             let arg2_val = get_param_value(pc, param_mask, 2, program);
             let res = &mut program[pos_out as usize];
@@ -172,7 +152,7 @@ fn exec_op(pc:&mut usize, program:&mut Vec<i32>, inpusts:&mut Vec<i32>, outputs:
             }
             *pc += 4;
         },
-        SET_IF_EQUAL{param_mask,arg1,arg2, pos_out} => {
+        SetIfEqual {param_mask,arg1,arg2, pos_out} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
             let arg2_val = get_param_value(pc, param_mask, 2, program);
             let res = &mut program[pos_out as usize];
@@ -184,12 +164,12 @@ fn exec_op(pc:&mut usize, program:&mut Vec<i32>, inpusts:&mut Vec<i32>, outputs:
             *pc += 4;
         },
 
-        PUSH_OUTPUT{param_mask, pos_out} => {
+        PushOutput {param_mask, pos_out} => {
             let out_value = get_param_value(pc, param_mask, 1, program);
             outputs.push(out_value);
             *pc += 2;
         }
-        HALT_PROGRAM => {
+        HaltProgram => {
             cont_execute = false;
         }
 
@@ -237,21 +217,25 @@ mod tests {
     #[test]
     fn test_mask1() {
 
-        println!("{:?}", is_pos_mode2(111,1));
-        println!("{:?}", is_pos_mode2(111,2));
-        println!("{:?}", is_pos_mode2(111,3));
+        println!("{:?}", is_pos_mode(111, 1));
+        println!("{:?}", is_pos_mode(111, 2));
+        println!("{:?}", is_pos_mode(111, 3));
 
-        println!("{:?}", is_pos_mode2(0,1));
-        println!("{:?}", is_pos_mode2(0,2));
-        println!("{:?}", is_pos_mode2(0,3));
+        println!("{:?}", is_pos_mode(0, 1));
+        println!("{:?}", is_pos_mode(0, 2));
+        println!("{:?}", is_pos_mode(0, 3));
 
-        println!("{:?}", is_pos_mode2(101,1));
-        println!("{:?}", is_pos_mode2(101,2));
-        println!("{:?}", is_pos_mode2(101,3));
+        println!("{:?}", is_pos_mode(101, 1));
+        println!("{:?}", is_pos_mode(101, 2));
+        println!("{:?}", is_pos_mode(101, 3));
 
-        println!("{:?}", is_pos_mode2(10,1));
-        println!("{:?}", is_pos_mode2(10,2));
-        println!("{:?}", is_pos_mode2(10,3));
+        println!("{:?}", is_pos_mode(10, 1));
+        println!("{:?}", is_pos_mode(10, 2));
+        println!("{:?}", is_pos_mode(10, 3));
+
+        println!("{:?}", is_pos_mode(1, 1));
+        println!("{:?}", is_pos_mode(1, 2));
+        println!("{:?}", is_pos_mode(1, 3));
 
     }
 
@@ -264,6 +248,72 @@ mod tests {
         program.print_opcodes();
 
         assert_eq!(9,program.opcodes[3]);
+    }
+
+    #[test]
+    fn test_mult11() {
+        let opcodes = vec![1102, 5, 6, 3, 99,4,5];
+
+        let mut program = Program::new(opcodes, None);
+        program.run();
+        program.print_opcodes();
+
+        assert_eq!(30,program.opcodes[3]);
+    }
+
+    #[test]
+    fn test_mult12() {
+        let opcodes = vec![10002, 5, 6, 3, 99,4,5];
+
+        let mut program = Program::new(opcodes, None);
+        program.run();
+        program.print_opcodes();
+
+        assert_eq!(20,program.opcodes[3]);
+    }
+
+    #[test]
+    fn test_mult13() {
+        let opcodes = vec![11002, 5, 6, 3, 99,4,5];
+
+        let mut program = Program::new(opcodes, None);
+        program.run();
+        program.print_opcodes();
+
+        assert_eq!(24,program.opcodes[3]);
+    }
+
+    #[test]
+    fn test_mult14() {
+        let opcodes = vec![10102, 5, 6, 3, 99,4,5];
+
+        let mut program = Program::new(opcodes, None);
+        program.run();
+        program.print_opcodes();
+
+        assert_eq!(25,program.opcodes[3]);
+    }
+
+    #[test]
+    fn test_add_1() {
+        let opcodes = vec![1, 5, 6, 3, 99,4,5];
+
+        let mut program = Program::new(opcodes, None);
+        program.run();
+        program.print_opcodes();
+
+        assert_eq!(9,program.opcodes[3]);
+    }
+
+    #[test]
+    fn test_add_2() {
+        let opcodes = vec![11101, 1, 2, 3, 99,4,5];
+
+        let mut program = Program::new(opcodes, None);
+        program.run();
+        program.print_opcodes();
+
+        assert_eq!(3,program.opcodes[3]);
     }
 
     #[test]

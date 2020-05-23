@@ -5,3 +5,5 @@ authors = ["raymondk <raymond.kalander@gmail.se>"]
 edition = "2018"
 
 [dependencies]
+permute = "0.1.0"
+

@@ -18,7 +18,7 @@ pub fn solve(input:String, part:Part) -> String {
 
 fn part1(opcodes:Vec<i32>) -> i32 {
     //
-    let mut inputs = vec![1];
+    let inputs = vec![1];
     let mut program = Program::new(opcodes, Some(inputs));
     program.run();
     program.get_last_output()
@@ -27,7 +27,7 @@ fn part1(opcodes:Vec<i32>) -> i32 {
 fn part2(opcodes:Vec<i32>) -> i32 {
     //
     //
-    let mut inputs = vec![5];
+    let inputs = vec![5];
     let mut program = Program::new(opcodes, Some(inputs));
     program.run();
     program.get_last_output()
