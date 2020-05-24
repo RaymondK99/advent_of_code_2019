@@ -41,7 +41,7 @@ fn part2(input:String, pic_width:usize, pic_height:usize) -> String {
     let pic_size = pic_height*pic_width;
     for pix_no in 0..pic_size {
         if pix_no > 0 && pix_no % pic_width == 0 {
-            //decoded_picture.push('\n');
+            decoded_picture.push('\n');
         }
 
         let mut final_color = '2';
@@ -109,7 +109,20 @@ mod tests {
         let indata = include_str!("../../input_08.txt");
         let res = solve(indata.trim().to_string(), Part2);
         println!("------------");
+        println!("{}",res.len());
         println!("{}", res);
+        let image = res.chars().map(
+            |ch| {
+                match ch {
+                    '0' => '█',
+                    '1' => ' ',
+                    _ => ch,
+                }
+            }
+        ).collect::<String>();
+
+        println!("{}",image);
+
         //assert_eq!(res, "2904");
 
     }
@@ -121,7 +134,19 @@ mod tests {
         let res = part2(indata.to_string(), 25,6);
         println!("res = {}", res);
 
-        assert_eq!(res, "111000110011100111101110010010100101001000010100101110010000100100010011100100101000011100010001001010010100101000010000100101110001100100001111011100");
+        //assert_eq!(res, "111000110011100111101110010010100101001000010100101110010000100100010011100100101000011100010001001010010100101000010000100101110001100100001111011100");
+
+        let image = res.chars().map(
+            |ch| {
+                match ch {
+                    '0' => '█',
+                    '1' => ' ',
+                    _ => ch,
+                }
+            }
+        ).collect::<String>();
+
+        println!("{}",image);
     }
 
 
