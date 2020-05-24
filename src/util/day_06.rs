@@ -71,7 +71,6 @@ fn find_santa(planets:&HashMap<String, Vec<String>>, name:&String, origin:&Strin
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use crate::util::Part::Part2;
 
 
     #[test]

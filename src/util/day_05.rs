@@ -4,7 +4,7 @@ use crate::util::int_code_computer::*;
 
 pub fn solve(input:String, part:Part) -> String {
 
-    let opcodes:Vec<i32> = input.split(',')
+    let opcodes:Vec<i64> = input.split(',')
         .map(|op| op.trim().parse().unwrap())
         .collect();
 
@@ -16,21 +16,21 @@ pub fn solve(input:String, part:Part) -> String {
     format!("{}",result)
 }
 
-fn part1(opcodes:Vec<i32>) -> i32 {
+fn part1(opcodes:Vec<i64>) -> i64 {
     //
     let inputs = vec![1];
     let mut program = Program::new(opcodes, Some(inputs));
     program.run();
-    program.get_last_output()
+    program.get_last_output().unwrap()
 }
 
-fn part2(opcodes:Vec<i32>) -> i32 {
+fn part2(opcodes:Vec<i64>) -> i64 {
     //
     //
     let inputs = vec![5];
     let mut program = Program::new(opcodes, Some(inputs));
     program.run();
-    program.get_last_output()
+    program.get_last_output().unwrap()
 }
 
 
@@ -71,7 +71,7 @@ mod tests {
         let mut inputs = vec![8];
         let mut program = Program::new(opcodes.clone(), Option::Some(inputs));
         program.run();
-        assert_eq!(program.get_last_output(), 1000);
+        assert_eq!(program.get_last_output().unwrap(), 1000);
 
     }
 
@@ -85,7 +85,7 @@ mod tests {
         let mut program = Program::new(opcodes.clone(), Option::Some(inputs));
         program.run();
 
-        assert_eq!(program.get_last_output(), 999);
+        assert_eq!(program.get_last_output().unwrap(), 999);
     }
 
 
@@ -99,7 +99,7 @@ mod tests {
         let mut program = Program::new(opcodes.clone(), Option::Some(inputs));
         program.run();
 
-        assert_eq!(program.get_last_output(), 1001);
+        assert_eq!(program.get_last_output().unwrap(), 1001);
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod tests {
         program.run();
         program.print_outputs();
 
-        assert_eq!(program.get_last_output(), 5577461);
+        assert_eq!(program.get_last_output().unwrap(), 5577461);
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
         program.run();
         program.print_outputs();
 
-        assert_eq!(program.get_last_output(), 7161591);
+        assert_eq!(program.get_last_output().unwrap(), 7161591);
     }
 
 }

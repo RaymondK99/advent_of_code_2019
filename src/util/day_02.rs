@@ -4,7 +4,7 @@ use crate::util::int_code_computer::*;
 
 pub fn solve(input : String, part: Part) -> String {
 
-    let opcodes:Vec<i32> = input.split(',')
+    let opcodes:Vec<i64> = input.split(',')
         .map(|op| op.trim().parse().unwrap())
         .collect();
 
@@ -17,7 +17,7 @@ pub fn solve(input : String, part: Part) -> String {
 }
 
 
-fn part1(mut opcodes:Vec<i32>) -> i32 {
+fn part1(mut opcodes:Vec<i64>) -> i64 {
 
     *(&mut opcodes[1]) = 12;
     *(&mut opcodes[2]) = 2;
@@ -27,8 +27,8 @@ fn part1(mut opcodes:Vec<i32>) -> i32 {
     program.get_first_opcode()
 }
 
-fn part2(opcodes:Vec<i32>) -> i32  {
-    const RESULT:i32 = 19690720;
+fn part2(opcodes:Vec<i64>) -> i64  {
+    const RESULT:i64 = 19690720;
 
     let mut i = 0;
     let mut output = 0;
@@ -53,7 +53,7 @@ fn part2(opcodes:Vec<i32>) -> i32  {
     output
 }
 
-fn run_int_codes(pos1:i32, pos2:i32, mut opcodes : Vec<i32>) -> i32 {
+fn run_int_codes(pos1:i64, pos2:i64, mut opcodes : Vec<i64>) -> i64 {
     *(&mut opcodes[1]) = pos1;
     *(&mut opcodes[2]) = pos2;
 

@@ -3,14 +3,14 @@ use crate::util::int_code_computer::Operation::{Add, Mult, GetInput, PushOutput,
 
 pub struct Program {
     pc:usize,
-    opcodes:Vec<i32>,
-    inputs:Vec<i32>,
-    outputs:Vec<i32>,
+    opcodes:Vec<i64>,
+    inputs:Vec<i64>,
+    outputs:Vec<i64>,
 }
 
 
 impl Program {
-    pub fn new(opcodes:Vec<i32>, inputs:Option<Vec<i32>>) -> Program {
+    pub fn new(opcodes:Vec<i64>, inputs:Option<Vec<i64>>) -> Program {
 
         Program{pc:0, opcodes:opcodes,
             inputs: match inputs {
@@ -29,11 +29,38 @@ impl Program {
         }
     }
 
-    pub fn get_last_output(&self) -> i32 {
-        *self.outputs.last().unwrap()
+    pub fn needs_input(&self) -> bool {
+        let next_op = new_op(self.pc, &self.opcodes);
+        match next_op {
+            GetInput{pos_out} => self.inputs.is_empty(),
+            _ => false,
+        }
     }
 
-    pub fn get_first_opcode(&self) -> i32 {
+    pub fn add_input(&mut self, input:i64) {
+        self.inputs.push(input);
+    }
+
+    pub fn is_halted(&self) -> bool {
+        let next_op = new_op(self.pc, &self.opcodes);
+        match next_op {
+            HaltProgram => true,
+            _ => false,
+        }
+    }
+
+    pub fn run_instruction(&mut self) {
+        exec_op(&mut self.pc, &mut self.opcodes, &mut self.inputs, &mut self.outputs);
+    }
+
+    pub fn get_last_output(&self) -> Option<i64> {
+        match self.outputs.is_empty() {
+            true => None,
+            false => Some(*self.outputs.last().unwrap()),
+        }
+    }
+
+    pub fn get_first_opcode(&self) -> i64 {
         *self.opcodes.first().unwrap()
     }
 
@@ -48,19 +75,19 @@ impl Program {
 
 #[derive(Debug)]
 enum Operation {
-    Add {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
-    Mult {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
-    GetInput {pos_out:i32},
-    PushOutput {param_mask:i32,pos_out:i32},
-    JumpIfGreaterThanZero {param_mask:i32,arg1:i32,arg2:i32},
-    JumpIfEqualToZero {param_mask:i32,arg1:i32,arg2:i32},
-    SetIfLessThan {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
-    SetIfEqual {param_mask:i32, arg1:i32,arg2:i32,pos_out:i32},
+    Add {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
+    Mult {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
+    GetInput {pos_out:i64},
+    PushOutput {param_mask:i64,pos_out:i64},
+    JumpIfGreaterThanZero {param_mask:i64,arg1:i64,arg2:i64},
+    JumpIfEqualToZero {param_mask:i64,arg1:i64,arg2:i64},
+    SetIfLessThan {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
+    SetIfEqual {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
     HaltProgram,
     Unknown,
 }
 
-fn new_op(pc:usize, program:&Vec<i32>) -> Operation {
+fn new_op(pc:usize, program:&Vec<i64>) -> Operation {
     let opcode = program[pc] % 100;
     let mask = (program[pc] - opcode) / 100;
 
@@ -78,7 +105,7 @@ fn new_op(pc:usize, program:&Vec<i32>) -> Operation {
     }
 }
 
-fn get_param_value(pc:&usize, mask:i32, par_num:usize, program:&Vec<i32>) -> i32 {
+fn get_param_value(pc:&usize, mask:i64, par_num:usize, program:&Vec<i64>) -> i64 {
     let par_value = program[(pc + par_num) as usize];
     match is_pos_mode(mask, par_num) {
         true => program[par_value as usize],
@@ -86,7 +113,7 @@ fn get_param_value(pc:&usize, mask:i32, par_num:usize, program:&Vec<i32>) -> i32
     }
 }
 
-fn is_pos_mode(mask:i32, num:usize) -> bool {
+fn is_pos_mode(mask:i64, num:usize) -> bool {
     let is_set = match num {
         1 => mask % 2 == 1,
         2 => (mask / 10) % 2 == 1,
@@ -97,16 +124,16 @@ fn is_pos_mode(mask:i32, num:usize) -> bool {
     !is_set
 }
 
-fn exec_op(pc:&mut usize, program:&mut Vec<i32>, inpusts:&mut Vec<i32>, outputs:&mut Vec<i32>) -> bool {
+fn exec_op(pc:&mut usize, program:&mut Vec<i64>, inpusts:&mut Vec<i64>, outputs:&mut Vec<i64>) -> bool {
     let mut cont_execute = true;
     let op = new_op(*pc, program);
-    //println!("pc = {}, opcode={}, op = {:?}",*pc, program[*pc], op);
+    println!("pc = {}, opcode={}, op = {:?}",*pc, program[*pc], op);
     match op {
         Add {param_mask, arg1,arg2,pos_out} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
             let arg2_val = get_param_value(pc, param_mask, 2, program);
             *(&mut program[pos_out as usize]) = arg1_val + arg2_val;
-            //println!("Set pos:{} to:{}",pos_out, program[pos_out as usize]);
+            println!(" => Set pos:{} to:{}",pos_out, program[pos_out as usize]);
             *pc += 4;
 
         }
@@ -116,10 +143,14 @@ fn exec_op(pc:&mut usize, program:&mut Vec<i32>, inpusts:&mut Vec<i32>, outputs:
 
             *(&mut program[pos_out as usize]) = arg1_val * arg2_val;
             *pc += 4;
+            println!(" => Set pos:{} to:{}",pos_out, program[pos_out as usize]);
+
         }
         GetInput {pos_out} => {
             *(&mut program[pos_out as usize]) = inpusts.remove(0);
             *pc += 2;
+            println!(" => Read to pos:{} as:{}",pos_out, program[pos_out as usize]);
+
         }
         JumpIfGreaterThanZero {param_mask,arg1,arg2} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
@@ -130,6 +161,9 @@ fn exec_op(pc:&mut usize, program:&mut Vec<i32>, inpusts:&mut Vec<i32>, outputs:
             } else {
                 *pc += 3;
             }
+
+            println!(" => Set PC to {}", pc);
+
         },
         JumpIfEqualToZero {param_mask,arg1,arg2} => {
             let arg1_val = get_param_value(pc, param_mask, 1, program);
@@ -323,14 +357,14 @@ mod tests {
         let mut program = Program::new(opcodes.clone(), Option::Some(vec![0]));
         program.run();
         program.print_outputs();
-        assert_eq!(0,program.get_last_output());
+        assert_eq!(0,program.get_last_output().unwrap());
 
         // Equal to 8
         let mut program2 = Program::new(opcodes.clone(), Option::Some(vec![8]));
         program2.run();
         program2.print_outputs();
 
-        assert_eq!(1,program2.get_last_output());
+        assert_eq!(1,program2.get_last_output().unwrap());
     }
 
     #[test]
@@ -340,14 +374,14 @@ mod tests {
         let mut program = Program::new(opcodes.clone(), Option::Some(vec![0]));
         program.run();
         program.print_outputs();
-        assert_eq!(0,program.get_last_output());
+        assert_eq!(0,program.get_last_output().unwrap());
 
         // Equal to 8
         let mut program2 = Program::new(opcodes.clone(), Option::Some(vec![8]));
         program2.run();
         program2.print_outputs();
 
-        assert_eq!(1,program2.get_last_output());
+        assert_eq!(1,program2.get_last_output().unwrap());
     }
 
     #[test]
@@ -357,14 +391,14 @@ mod tests {
         let mut program = Program::new(opcodes.clone(), Option::Some(vec![0]));
         program.run();
         program.print_outputs();
-        assert_eq!(1,program.get_last_output());
+        assert_eq!(1,program.get_last_output().unwrap());
 
         // Less than 8
         let mut program2 = Program::new(opcodes.clone(), Option::Some(vec![8]));
         program2.run();
         program2.print_outputs();
 
-        assert_eq!(0,program2.get_last_output());
+        assert_eq!(0,program2.get_last_output().unwrap());
     }
 
     #[test]
@@ -372,18 +406,18 @@ mod tests {
         let opcodes = vec![3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9];
         let mut program = Program::new(opcodes.clone(), Option::Some(vec![0]));
         program.run();
-        assert_eq!(0,program.get_last_output());
+        assert_eq!(0,program.get_last_output().unwrap());
 
         let mut program2 = Program::new(opcodes.clone(), Option::Some(vec![99]));
         program2.run();
-        assert_eq!(1,program2.get_last_output());
+        assert_eq!(1,program2.get_last_output().unwrap());
 
 
         let mut program3 = Program::new(vec![3,3,1105,-1,9,1101,0,0,12,4,12,99,1], Option::Some(vec![0]));
         program3.run();
         program3.print_outputs();
 
-        assert_eq!(0,program3.get_last_output());
+        assert_eq!(0,program3.get_last_output().unwrap());
     }
 
 
@@ -396,7 +430,7 @@ mod tests {
         program.run();
         program.print_outputs();
 
-        assert_eq!(program.get_last_output(), 5577461);
+        assert_eq!(program.get_last_output().unwrap(), 5577461);
     }
 
     #[test]
@@ -408,7 +442,7 @@ mod tests {
         program.run();
         program.print_outputs();
 
-        assert_eq!(program.get_last_output(), 7161591);
+        assert_eq!(program.get_last_output().unwrap(), 7161591);
     }
 
     #[test]
