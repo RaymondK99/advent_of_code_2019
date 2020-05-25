@@ -24,7 +24,7 @@ fn part1(mut opcodes:Vec<i64>) -> i64 {
 
     let mut program = Program::new(opcodes, None);
     program.run();
-    program.get_first_opcode()
+    program.get_memory(0)
 }
 
 fn part2(opcodes:Vec<i64>) -> i64  {
@@ -60,7 +60,7 @@ fn run_int_codes(pos1:i64, pos2:i64, mut opcodes : Vec<i64>) -> i64 {
 
     let mut prog = Program::new(opcodes, None);
     prog.run();
-    prog.get_first_opcode()
+    prog.get_memory(0)
 }
 
 #[cfg(test)]

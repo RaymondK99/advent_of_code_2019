@@ -82,7 +82,7 @@ mod tests {
         let indata = "0222112222120000";
         let res = part2(indata.to_string(), 2,2);
         println!("res = {}", res);
-        assert_eq!(res, "0110");
+        assert_eq!(res, "01\n10");
 
     }
 
@@ -91,7 +91,7 @@ mod tests {
         let indata = "2222212222122000";
         let res = part2(indata.to_string(), 2,2);
         println!("res = {}", res);
-        assert_eq!(res, "2110");
+        assert_eq!(res, "21\n10");
 
     }
 
