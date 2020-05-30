@@ -153,7 +153,7 @@ fn part2(asteroids:Vec<Asteroid>, target:i64) -> usize {
         }
     }
 
-    2
+    panic!("Not enough ateroids to destroy!")
 }
 
 
