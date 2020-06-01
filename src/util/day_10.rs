@@ -139,7 +139,7 @@ fn part2(asteroids:Vec<Asteroid>, target:i64) -> usize {
 
     while num_destroyed < target {
         for angle in &angles {
-            let mut cnt =  angle_map.get_mut(angle).unwrap();
+            let cnt =  angle_map.get_mut(angle).unwrap();
             if cnt.len() > 0 {
                 // Destroy one asteroid
                 let asteroid = cnt.remove(0);

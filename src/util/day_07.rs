@@ -102,7 +102,7 @@ fn run_thruster_w_feedback(opcodes:Vec<i64>,phase_setting:Vec<i64>) {
 }
 
 fn find_max_w_feedback(opcodes:Vec<i64>) -> i64 {
-    let mut max_value = 0;
+    let max_value = 0;
     let initial_permutation = vec![5,6,7,8,9];
     let amps = vec!['A','B','C','D','E'];
 
