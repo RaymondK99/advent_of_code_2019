@@ -87,7 +87,7 @@ impl Context {
         let mut key_vec:Vec<char> = keys.iter().map(|c|*c).collect();
         key_vec.sort();
         let node = NodeKey{keys:key_vec, pos:new_pos};
-        Context{node:node,keys_left:key_set, map:self.map.clone(), keys:keys, pos:new_pos, steps:steps, num_keys:self.num_keys, width:self.width, height:self.height}
+        Context{node,keys_left:key_set, map:self.map.clone(), keys, pos:new_pos, steps, num_keys:self.num_keys, width:self.width, height:self.height}
     }
 
     fn get_item(&self, pos:Pos) -> char {
