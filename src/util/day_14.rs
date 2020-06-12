@@ -1,6 +1,5 @@
 use crate::util::Part;
 use std::collections::HashMap;
-use std::panic::resume_unwind;
 
 
 pub fn solve(input:String, part:Part) -> String {
