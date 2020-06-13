@@ -1,7 +1,6 @@
 use crate::util::Part;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
-use std::fs::read;
 
 pub fn solve(input:String, part:Part) -> String {
     let result = match part {
