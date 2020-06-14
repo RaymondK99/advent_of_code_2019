@@ -76,7 +76,7 @@ impl Program {
         }
     }
 
-    fn set_memory(&mut self,addr:usize, value:i64) {
+    pub fn set_memory(&mut self,addr:usize, value:i64) {
         self.memory.insert(addr, value);
     }
 
@@ -86,6 +86,22 @@ impl Program {
         }
 
         self.memory[&addr]
+    }
+
+    pub fn get_input_len(&self) -> usize {
+        self.inputs.len()
+    }
+
+    pub fn run_until_output(&mut self, len:usize) -> Vec<i64> {
+        let mut tmp = vec![];
+        while tmp.len() < len {
+            self.run_instruction();
+            if self.outputs.len() > 0 {
+                tmp.push(self.pop_output());
+            }
+        }
+
+        tmp
     }
 
     fn next_op(&self) -> Operation {
