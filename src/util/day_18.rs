@@ -39,7 +39,6 @@ impl Pos {
             Direction::Down=> Pos{x:self.x, y:self.y-1},
             Direction::Left=> Pos{x:self.x-1, y:self.y},
             Direction::Right => Pos{x:self.x+1, y:self.y},
-            _ => panic!("..."),
         };
 
         new_pos
@@ -234,7 +233,6 @@ fn do_move(context:&mut Context, dir:Direction) -> char {
         Direction::Down=> Pos{x:context.pos.x, y:context.pos.y-1},
         Direction::Left=> Pos{x:context.pos.x-1, y:context.pos.y},
         Direction::Right => Pos{x:context.pos.x+1, y:context.pos.y},
-        _ => panic!("..."),
     };
 
     // Update position
@@ -390,7 +388,7 @@ mod tests {
 ########.########
 #l.F..d...h..C.m#
 #################";
-        let mut m = parse_input(input);
+        let m = parse_input(input);
 
         let res = m.bfs_keys();
         println!("{:?}", res);

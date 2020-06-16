@@ -58,8 +58,7 @@ fn run_thruster_w_feedback(opcodes:Vec<i64>,phase_setting:Vec<i64>) {
     let mut next_input = Some(0);
 
     let mut programs = vec![];
-    for i in 0..5 {
-        let input:Vec<i64> = vec![];
+    for _ in 0..5 {
         programs.push(Program::new(opcodes.clone(),None));
     }
 

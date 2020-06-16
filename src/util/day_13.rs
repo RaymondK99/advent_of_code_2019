@@ -52,7 +52,7 @@ fn part2(opcodes:Vec<i64>) -> usize {
     let mut score = 0;
     let mut ball_x = -1;
     let mut prev_ball_x = -1;
-    let mut prev_ball_y = -1;
+    let  prev_ball_y = -1;
     let mut bar_x = -1;
 
     while !program.is_halted() {
@@ -138,7 +138,6 @@ fn draw(score:i64, map:&HashMap<(i64,i64),i64>) {
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use crate::util::Part::*;
 
     #[test]
     fn test1() {

@@ -10,12 +10,12 @@ pub fn solve(input:String, part:Part) -> String {
 }
 
 fn part1(input:&str) -> String {
-    let mut input = to_vec(input.trim());
+    let input = to_vec(input.trim());
     fft(input, 100)
 }
 
 fn part2(input:&str) -> String {
-    let mut input = to_vec(input);
+    let input = to_vec(input);
     fft(input, 100)
 }
 
@@ -187,11 +187,9 @@ mod tests {
         // 0,0,1,1,0,0,-1,-1 period = 8, occasions = 10_000 / 8 = 1250
         // 0,0,0,1,1,1,0,0,0,-1,-1,-1 period = 12m, occasions  = 833, rest = 4
 
-        let period = (out_pos+1) * 4;
-        let occasions = times / period;
-        let rest = times % period;
-
-
+       // let period = (out_pos+1) * 4;
+       // let occasions = times / period;
+       // let rest = times % period;
 
     }
 }

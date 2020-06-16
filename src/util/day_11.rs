@@ -149,7 +149,6 @@ fn run_step_sequence(program:&mut Program) -> bool {
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
-    use crate::util::Part::*;
 
     #[test]
     fn test1() {
