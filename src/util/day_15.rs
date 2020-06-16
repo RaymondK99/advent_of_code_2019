@@ -148,12 +148,6 @@ fn dfs(program:&mut Program) -> HashMap<Pos, i64> {
     map
 }
 
-fn calc_dist_to_oxygen_system(mut map:HashMap<Pos,i64>) -> i64 {
-    let dest_pos = map.iter().find(|(&p,&i)| i == 2).unwrap().0.clone();
-    let dist_map = bfs(map, Pos{x:0,y:0});
-    *dist_map.get(&dest_pos).unwrap()
-}
-
 fn bfs(mut map:HashMap<Pos,i64>, start_pos:Pos) -> HashMap<Pos,i64> {
     // Perform a bfs search on the 'map'
     let mut queue = vec![];
