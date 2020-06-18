@@ -317,7 +317,7 @@ mod tests {
 
     }
 
-    #[test]
+    //#[test]
     fn test_find_valid_permutations2() {
         let s ="L,12,L,12,R,12,L,12,L,12,R,12,L,8,L,8,R,12,L,8,L,8,L,10,R,8,R,12,L,10,R,8,R,12,L,12,L,12,R,12,L,8,L,8,R,12,L,8,L,8,L,10,R,8,R,12,L,12,L,12,R,12,L,8,L,8,R,12,L,8,L,8";
 
