@@ -1,7 +1,6 @@
 use crate::util::Part;
 use crate::util::int_code_computer::*;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::process::exit;
+use std::collections::{HashMap, HashSet};
 
 pub fn solve(input:String, part:Part) -> String {
     let opcodes:Vec<i64> = input.split(',')
@@ -17,7 +16,7 @@ pub fn solve(input:String, part:Part) -> String {
 }
 
 
-fn part1(opcodes:Vec<i64>) -> usize {
+fn build_map(opcodes:Vec<i64>) -> HashMap<(i32,i32),i64> {
     let mut program = Program::new(opcodes, None);
 
     while !program.is_halted() {
@@ -28,12 +27,30 @@ fn part1(opcodes:Vec<i64>) -> usize {
     let s:String = output.iter().map(|item| std::char::from_u32( *item as u32 ).unwrap() ).collect();
     println!("{}",s);
 
-    //let mut map = HashMap::new();
-    let map:HashMap<(usize,usize),i64> = output.split( |i| *i == 10).enumerate()
+    let map :HashMap<(i32,i32),i64> = output.split( |i| *i == 10).enumerate()
         .map(|(y, row)| {
             row.iter().enumerate().map(move |(x, item)| {
-                ( (x,y), *item)
+                ( (x as i32,y as i32), *item)
             } )} ).flatten().collect();
+    map
+}
+
+fn is_intersection(x:usize,y:usize,map:&HashMap<(usize,usize),i64>) -> bool {
+    if x == 0 ||y == 0 {
+        return false;
+    }
+
+    let points = [(x,y),(x-1,y),(x+1,y),(x,y-1),(x,y+1)];
+    points.iter().map( |key| map.get(key))
+        .filter( |item| item.is_some() && *item.unwrap() == 35 ).count() == points.len()
+}
+
+fn get_path(map:&HashMap<(usize,usize),i64>) {
+
+}
+
+fn part1(opcodes:Vec<i64>) -> i32 {
+    let map = build_map(opcodes);
 
     map.iter().filter(|((x,y),&item)| {
             *x > 0 && *y > 0 && map.contains_key(&(*x+1,*y+1)) &&
@@ -42,14 +59,214 @@ fn part1(opcodes:Vec<i64>) -> usize {
             *map.get(&(*x+1,*y)).unwrap() == 35 &&
             *map.get(&(*x,*y-1)).unwrap() == 35 &&
             *map.get(&(*x,*y+1)).unwrap() == 35
-    }).map(|((x,y),&item)| *y * *x ).sum()
+    }).map(|((x,y),&item)| *y * *x ).fold(0, |acc, n| acc + n)
 }
 
 
+fn next_step(current_pos:&(i32,i32), current_dir:char, map:&HashMap<(i32,i32),i64>) -> (char,i32) {
+    let &(x,y) = current_pos;
 
-fn part2(opcodes:Vec<i64>) -> usize {
+    //println!(" => current pos:{:?}, sym={}, dir={}", current_pos, map.get(current_pos).unwrap(), current_dir);
+    let dir = if x > 0 && map.get(&(x-1,y)).is_some() && *map.get(&(x-1,y)).unwrap() == 35 && current_dir != '>' {
+        '<'
+    } else if  map.get(&(x+1,y)).is_some() && *map.get(&(x+1,y)).unwrap() == 35 && current_dir != '<' {
+        '>'
+    } else if y > 0 && *map.get(&(x,y-1)).unwrap() == 35 && current_dir != 'v' {
+        '^'
+    } else if map.get(&(x,y+1)).is_some() && *map.get(&(x,y+1)).unwrap() == 35 && current_dir != '^' {
+        'v'
+    } else {
+        'F'
+    };
+
+    let dst = (x,y);
+    let len = if dir == '<' {
+        let mut x1 = x-1;
+        while x1 >= 0 && *map.get( &(x1,y)).unwrap() == 35 {
+            x1 -= 1;
+        }
+        x - x1 - 1
+    } else if dir == '>' {
+        let mut x1 = x+1;
+        while map.get( &(x1,y)).is_some() && *map.get( &(x1,y)).unwrap() == 35 {
+            x1 += 1;
+        }
+        x1 - x - 1
+    } else if dir == '^' {
+        let mut y1 = y-1;
+        while y1 >= 0 && *map.get( &(x,y1)).unwrap() == 35 {
+            y1 -= 1;
+        }
+        y - y1 - 1
+    } else if dir == 'v' {
+        let mut y1 = y+1;
+        while map.get( &(x,y1)).is_some() && *map.get( &(x,y1)).unwrap() == 35 {
+            y1 += 1;
+        }
+        y1 - y - 1
+    } else {
+        0
+    };
+
+    (dir,len)
+}
+
+fn next_pos( (x,y):&(i32,i32), (dir,len):&(char,i32)) -> (i32,i32) {
+    match dir {
+        '<' => (x-len,*y),
+        '>' => (x+len,*y),
+        '^' => (*x,y-len),
+        'v' => (*x,y+len),
+        'F' => (*x,*y),
+        _ => panic!("..."),
+    }
+}
+
+fn next_turn(current_dir:char, next_dir:char) -> char {
+
+    // Up
+    if current_dir == '^' && next_dir == '<' {
+        'L'
+    } else if current_dir == '^' && next_dir == '>' {
+        'R'
+    }
+        // Left
+    else if current_dir == '<' && next_dir == '^' {
+        'R'
+    } else if current_dir == '<' && next_dir == 'v' {
+        'L'
+    }
+
+    // Right
+    else if current_dir == '>' && next_dir == '^' {
+        'L'
+    } else if current_dir == '>' && next_dir == 'v' {
+        'R'
+    }
+
+    // Down
+    else if current_dir == 'v' && next_dir == '>' {
+        'L'
+    } else if current_dir == 'v' && next_dir == '<' {
+        'R'
+    } else {
+        panic!("...")
+    }
+
+}
+
+fn part2(opcodes:Vec<i64>) -> i32 {
+    let map = build_map(opcodes);
+    let start_sym = [60,62,94,118];
+    let start_pair = map.iter().find(|((x,y), item)| start_sym.contains(item) ).unwrap();
+    let start_sym = match *start_pair.1 {
+        60 => '<',
+        62 => '>',
+        94 => '^',
+        118 => 'v',
+        _ => panic!("..."),
+    };
+
+    //println!("Start pos = {:?}",start_pair);
+
+    let mut pos = start_pair.0.clone();
+    let mut next_dir = start_sym;
+    let mut i = 0;
+    let mut path = vec![];
+    while next_dir != 'F' {
+        let next = next_step(&pos, next_dir, &map);
+        pos = next_pos(&pos, &next);
+        if next.0 != 'F' {
+            path.push( (next_turn(next_dir, next.0),next.1));
+        }
+        next_dir = next.0;
+        //println!("next step = {:?}, next pos = {:?}",next,pos);
+
+        i += 1;
+    }
+
+    //println!("{:?}", path);
+    let res = path.iter().map( |(dir,len)| {
+        format!("{},{}",*dir,*len)
+    } ).fold( String::new(), |acc, item| {
+        if acc.is_empty() {
+            item
+        } else {
+            format!("{},{}",acc,item)
+        }
+    });
+
+    println!("res={}",res);
     2
 }
+
+fn find_common_substrings(s:&str) -> HashSet<&str> {
+    let mut i = 0;
+    let mut j = 0;
+    let mut sub_strings = HashSet::new();
+
+    while i < s.len() {
+        j = i + 3;
+        while j <= s.len() {
+            let sub_string = &s[i..j];
+
+            if s[i+1..s.len()].find(sub_string).is_some() {
+                sub_strings.insert(sub_string);
+            }
+            j = j + 4;
+        }
+        i = i + 4;
+    }
+    //println!("Found sub-strings:{:?}",sub_strings);
+    sub_strings
+}
+
+
+fn find_valid_permutations(s:&str) -> Vec<&str> {
+    let mut sub_strings:Vec<&str> = find_common_substrings(s).iter().map(|s| *s).collect();
+    let mut solutions = vec![];
+    println!("Found sub-strings:{:?}",sub_strings);
+
+    for n in 0..sub_strings.len() {
+        let word = sub_strings[n];
+        let mut rest = s.replace(word,"").replace(",,",",").trim_matches(',').to_string();
+        let mut m = 0;
+        let mut solution = vec![word];
+        while !rest.is_empty() && m < sub_strings.len() {
+            let index = (n + m) % sub_strings.len();
+            let next_word = sub_strings[index];
+            if rest.find(next_word).is_some() {
+                //println!(" => matched next_word={}, rest={}",next_word, rest);
+                solution.push(next_word);
+                rest = rest.replace(next_word, "").replace(",,", ",").trim_matches(',').to_string();
+            }
+            m += 1;
+        }
+
+        if rest.is_empty() {
+            solutions.push(solution.clone());
+            //println!("Found solution:{:?}", solution);
+        }
+    }
+
+    // Sort solutions by score
+    solutions.sort_by( |a,b| {
+        if a.len() != b.len() {
+            return a.len().cmp(&b.len())
+        } else {
+            let sum_a:usize = a.iter().map(|&s| s.len()).sum();
+            let sum_b:usize = b.iter().map(|&s| s.len()).sum();
+            sum_b.cmp( &sum_a)
+        }
+    });
+
+    /*solutions.iter().enumerate().for_each(|(i,v)| {
+        println!("i={}, {:?}",i, v);
+    });*/
+    solutions.remove(0)
+}
+
+
 
 
 
@@ -72,5 +289,40 @@ mod tests {
         let res = part2(opcodes);
         println!("res = {}", res);
         assert_eq!(2, res);
+    }
+
+    #[test]
+    fn test_common_substrings() {
+        let s = "R,8,R,8,R,4,R,4,R,8,L,6,L,2,R,4,R,4,R,8,R,8,R,8,L,6,L,2";
+
+        let mut sub_strings = find_common_substrings(s);
+
+        println!("Found sub-strings:{:?}",sub_strings);
+
+        assert_eq!(true, sub_strings.contains("R,4,R,8"));
+        assert_eq!(true, sub_strings.contains("R,8,R,8"));
+        assert_eq!(true, sub_strings.contains("R,4,R,8"));
+        assert_eq!(true, sub_strings.contains("R,8,L,6,L,2"));
+        assert_eq!(true, sub_strings.contains("R,4,R,4,R,8"));
+        assert_eq!(true, sub_strings.contains("L,6,L,2"));
+
+    }
+
+    #[test]
+    fn test_find_valid_permutations1() {
+        let s = "R,8,R,8,R,4,R,4,R,8,L,6,L,2,R,4,R,4,R,8,R,8,R,8,L,6,L,2";
+
+        let res = find_valid_permutations(s);
+        println!("{:?}", res);
+
+    }
+
+    #[test]
+    fn test_find_valid_permutations2() {
+        let s ="L,12,L,12,R,12,L,12,L,12,R,12,L,8,L,8,R,12,L,8,L,8,L,10,R,8,R,12,L,10,R,8,R,12,L,12,L,12,R,12,L,8,L,8,R,12,L,8,L,8,L,10,R,8,R,12,L,12,L,12,R,12,L,8,L,8,R,12,L,8,L,8";
+
+        let res = find_valid_permutations(s);
+        println!("{:?}", res);
+
     }
 }
