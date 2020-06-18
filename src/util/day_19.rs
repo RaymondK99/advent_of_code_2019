@@ -35,36 +35,21 @@ fn part1(opcodes:Vec<i64>) -> i64 {
 
 fn part2(opcodes:Vec<i64>,size:i64) -> i64 {
 
-    // Find a first point
     let mut y0 = 0;
     let mut x0 = size;
     while !check_point(opcodes.clone(), x0, y0) {
         y0 += 1;
     }
 
-    //println!("Found {},{}",x0,y0);
     // Found upper right corner
-
-    while true {
+    while check_square(opcodes.clone(), x0 - (size - 1), y0, size) != 4 {
+        x0 += 1;
         while !check_point(opcodes.clone(), x0, y0) {
             y0 += 1;
         }
-
-        //println!("Trying {},{}", x0, y0);
-        let mut res  = 1;
-        let mut y1 = y0;
-        while res > 0 {
-            res = check_square(opcodes.clone(), x0, y1, size);
-            if res == 4 {
-                return x0 * 10_000 + y1;
-            }
-            y1 += 1;
-        }
-
-        x0 += 1;
     }
 
-    x0 * 10_000 + y0
+    (x0-(size-1)) * 10_000 + y0
 }
 
 
