@@ -1,7 +1,6 @@
 use crate::util::Part;
 use crate::util::int_code_computer::*;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::process::exit;
+use std::collections::{HashMap, VecDeque};
 
 pub fn solve(input:String, part:Part) -> String {
 

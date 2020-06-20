@@ -1,7 +1,5 @@
 use crate::util::Part;
 use crate::util::int_code_computer::*;
-use std::collections::{HashMap, HashSet};
-use std::ptr::replace;
 
 pub fn solve(input:String, part:Part) -> String {
     let opcodes:Vec<i64> = input.split(',')
