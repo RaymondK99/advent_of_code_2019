@@ -237,7 +237,7 @@ FG..#########.....#
         assert_eq!(None, maze.get_portal( &Pos::new(10,2)));
 
         let res = maze.bfs();
-        assert_eq!(26, res);
+        assert_eq!(23, res);
     }
 
     #[test]
