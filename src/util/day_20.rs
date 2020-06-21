@@ -1,5 +1,5 @@
 use crate::util::Part;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, BinaryHeap, VecDeque};
 
 pub fn solve(input:String, part:Part) -> String {
 
@@ -14,34 +14,43 @@ pub fn solve(input:String, part:Part) -> String {
 
 
 fn part1(input:String) -> i32 {
-    Maze::new(input.as_str()).bfs()
+    Maze::new(input.as_str(), false).bfs()
 }
 
 fn part2(input:String) -> i32 {
-    2
+    Maze::new(input.as_str(), true).bfs()
+
 }
 
 #[derive(Debug)]
 struct Maze {
     map:HashMap<Pos,char>,
-    portals:HashMap<String, Vec<Pos>>,
-    pos_to_portal:HashMap<Pos,String>,
+    portals:HashMap<String, Vec<(i32,i32)>>,
+    pos_to_portal:HashMap<(i32,i32),String>,
     start:Pos,
     end:Pos,
+    width:i32,
+    height:i32,
+    recursive:bool,
+    levels:i32,
 }
 
 impl Maze {
-   fn new(input:&str) -> Maze {
+   fn new(input:&str, recursive:bool) -> Maze {
        // Parse input string
        let mut map = HashMap::new();
        input.lines().enumerate().for_each( |(y, line)| {
            line.chars().enumerate().for_each(|(x, ch)| {
-               map.insert( Pos{x:x as i32,y:y as i32}, ch);
+               map.insert( Pos::new(x as i32, y as i32), ch);
            })
        } );
 
+       // Find max width
+       let width = map.iter().map(|(pos,_)| pos.x).max().unwrap();
+       let height = map.iter().map(|(pos,_)| pos.y).max().unwrap();
+
         // Find start pos
-       let mut portals:HashMap<String,Vec<Pos>> = HashMap::new();
+       let mut portals:HashMap<String,Vec<(i32,i32)>> = HashMap::new();
        map.iter().for_each(|(k, item)| {
            if *item == '.' {
                let portal = Maze::gen_portals(k, &map);
@@ -50,10 +59,10 @@ impl Maze {
 
                    // Add portal
                    if portals.contains_key(&portal_str) {
-                       portals.get_mut(&portal_str).unwrap().push(k.clone());
+                       portals.get_mut(&portal_str).unwrap().push((k.x, k.y));
                        portals.get_mut(&portal_str).unwrap().sort();
                    } else {
-                       portals.insert(portal_str, vec![k.clone()]);
+                       portals.insert(portal_str, vec![(k.x, k.y)]);
                    }
                }
            }
@@ -69,32 +78,61 @@ impl Maze {
        let start = portals.get("AA").unwrap().get(0).unwrap().clone();
        let end = portals.get("ZZ").unwrap().get(0).unwrap().clone();
 
-       Maze{start:start,end:end,map:map,portals:portals, pos_to_portal:pos_to_portal}
+       Maze{levels:0, recursive:recursive,height:height, width:width, start:Pos::new(start.0,start.1),end:Pos::new(end.0, end.1), map:map,portals:portals, pos_to_portal:pos_to_portal}
     }
 
+    // Get position of "other" portal
     fn get_portal(&self, pos:&Pos) -> Option<Pos> {
-        let portal= self.pos_to_portal.get(&pos);
+        let tuple = (pos.x, pos.y);
+        let portal= self.pos_to_portal.get(&tuple);
+        if portal.is_some() && portal.unwrap().as_str().ne("AA") && portal.unwrap().as_str().ne("ZZ") && self.start.ne(&pos) && self.end.ne(&pos) {
+            let other = self.portals.get(portal.unwrap()).unwrap().iter().find(|&p| p.ne(&tuple)).unwrap();
 
-        if portal.is_some() && self.start.ne(&pos) && self.end.ne(&pos) {
-            let other = self.portals.get(portal.unwrap()).unwrap().iter().find(|&p| p.ne(&pos)).unwrap();
-            return Some(other.clone());
+            if !self.recursive {
+                return Some(Pos::new(other.0, other.1));
+            }
+
+            // Is this an outer or inner portal
+            if self.is_outer_portal(&pos) && pos.z > 0 {
+                // Move down...
+                return Some(Pos::new3d(other.0, other.1, pos.z - 1));
+            } else if !self.is_outer_portal(&pos) {
+                // Move up
+                return Some(Pos::new3d(other.0, other.1, pos.z + 1));
+            }
         }
 
         None
     }
 
-    fn get_adjacent(&self, pos:&Pos) -> Vec<Pos> {
+    // Will this lead to a lower level
+    fn is_outer_portal(&self, pos:&Pos) -> bool {
+        let outer = pos.y < 3 || pos.y >= self.height - 3 || pos.x < 3 || pos.x >= self.width - 3;
+        outer
+    }
+
+    fn get_adjacent(&mut self, pos:&Pos) -> Vec<Pos> {
         let mut nodes = vec![pos.up(), pos.down(), pos.left(), pos.right()];
         let portal_node = self.get_portal(pos);
         if portal_node.is_some() {
             nodes.push(portal_node.unwrap());
         }
 
+        // Do we encounter a new level here?
+        let max_z = nodes.iter().map(|p| p.z).max().unwrap();
+        if max_z > self.levels {
+            // Insert a new level
+            let tmp = self.map.clone();
+            tmp.iter().filter(|(k,i)| k.z == 0).for_each(|(k,i)|{
+               self.map.insert( Pos::new3d(k.x,k.y, max_z), *i);
+            });
+            self.levels = max_z;
+        }
+
         nodes.iter().filter( |&p| *self.map.get(&p).unwrap() == '.').map(|p| p.clone()).collect()
     }
 
     fn gen_portals(pos:&Pos, map:&HashMap<Pos,char>) -> Option<String> {
-
         let r = vec![map.get(&pos.right()),map.get(&pos.right().right())];
         let l = vec![map.get(&pos.left().left()), map.get(&pos.left()),];
         let u = vec![map.get(&pos.up().up()), map.get(&pos.up())];
@@ -115,67 +153,73 @@ impl Maze {
         }
     }
 
-    fn bfs(&self) -> i32 {
+    fn bfs(&mut self) -> i32 {
         let mut dist = HashMap::new();
-        let mut queue = vec![];
+        let mut dist_target = 1_000_000;
+        let mut queue= BinaryHeap::new();
 
         // Add start pos
-        queue.push( self.start);
+        queue.push(std::cmp::Reverse(((0,0),self.start)));
         dist.insert( self.start, 0 );
 
         while !queue.is_empty() {
 
             // Pop first item
-            let current_pos = queue.pop().unwrap();
+            let (_, current_pos) = queue.pop().unwrap().0;
             let distance = *dist.get(&current_pos).unwrap() ;
 
             //println!("Eval pos:{:?}, dist={}", current_pos, distance );
+
+            // Check if we have a shorter distance to target?
+            if self.end.eq(&current_pos) && dist_target > distance {
+                //println!("Found solution dist = {}", distance);
+                return  distance;
+            }
 
             // Iterate through neighbors
             for node in self.get_adjacent(&current_pos).iter() {
                 if !dist.contains_key(node) || *dist.get(node).unwrap() > (distance+1) {
                     // Add to distance
-                    dist.insert(node.clone(), (distance +1));
-                    queue.push(node.clone());
+                    dist.insert(node.clone(), distance +1);
+                    queue.push(std::cmp::Reverse(((node.z,distance+1,),node.clone())));
                 }
             }
-
-
         }
 
-        if dist.contains_key(&self.end) {
-            *dist.get(&self.end).unwrap()
-        } else {
-            -1
-        }
+        dist_target
     }
 }
 
 #[derive(Debug,Copy, Clone,Hash,Eq, PartialEq, Ord, PartialOrd)]
 struct Pos {
+    z:i32,
     x:i32,
     y:i32,
 }
 
 impl Pos {
     fn new(x:i32, y:i32) -> Pos {
-        Pos{x:x,y:y}
+        Pos{x:x,y:y,z:0}
+    }
+
+    fn new3d(x:i32, y:i32,z:i32) -> Pos {
+        Pos{x:x,y:y,z:z}
     }
 
     fn up(&self) -> Pos {
-        Pos::new(self.x,self.y-1)
+        Pos::new3d(self.x,self.y-1,self.z)
     }
 
     fn down(&self) -> Pos {
-        Pos::new(self.x,self.y+1)
+        Pos::new3d(self.x,self.y+1,self.z)
     }
 
     fn left(&self) -> Pos {
-        Pos::new(self.x-1,self.y)
+        Pos::new3d(self.x-1,self.y,self.z)
     }
 
     fn right(&self) -> Pos {
-        Pos::new(self.x+1,self.y)
+        Pos::new3d(self.x+1,self.y,self.z)
     }
 }
 
@@ -207,7 +251,7 @@ FG..#########.....#
              Z
              Z";
 
-        let maze = Maze::new(input);
+        let mut maze = Maze::new(input,false);
         println!("{:?}",maze);
 
         // Check start / end
@@ -215,19 +259,19 @@ FG..#########.....#
         assert_eq!(Pos::new(13,16), maze.end);
 
         // Check portals
-        assert_eq!(Pos::new(9,2), *maze.portals.get("AA").unwrap().get(0).unwrap());
-        assert_eq!(Pos::new(2,8), *maze.portals.get("BC").unwrap().get(0).unwrap());
-        assert_eq!(Pos::new(9,6), *maze.portals.get("BC").unwrap().get(1).unwrap());
-        assert_eq!(Pos::new(2,13), *maze.portals.get("DE").unwrap().get(0).unwrap());
-        assert_eq!(Pos::new(6,10), *maze.portals.get("DE").unwrap().get(1).unwrap());
+        assert_eq!((9,2), *maze.portals.get("AA").unwrap().get(0).unwrap());
+        assert_eq!((2,8), *maze.portals.get("BC").unwrap().get(0).unwrap());
+        assert_eq!((9,6), *maze.portals.get("BC").unwrap().get(1).unwrap());
+        assert_eq!((2,13), *maze.portals.get("DE").unwrap().get(0).unwrap());
+        assert_eq!((6,10), *maze.portals.get("DE").unwrap().get(1).unwrap());
 
         // Check pos to portal
-        assert_eq!("DE",maze.pos_to_portal.get(&Pos::new(2,13)).unwrap());
-        assert_eq!("DE",maze.pos_to_portal.get(&Pos::new(6,10)).unwrap());
-        assert_eq!("BC",maze.pos_to_portal.get(&Pos::new(9,6)).unwrap());
-        assert_eq!("BC",maze.pos_to_portal.get(&Pos::new(2,8)).unwrap());
-        assert_eq!("AA",maze.pos_to_portal.get(&Pos::new(9,2)).unwrap());
-        assert_eq!(None,maze.pos_to_portal.get(&Pos::new(10,2)));
+        assert_eq!("DE",maze.pos_to_portal.get(&(2,13)).unwrap());
+        assert_eq!("DE",maze.pos_to_portal.get(&(6,10)).unwrap());
+        assert_eq!("BC",maze.pos_to_portal.get(&(9,6)).unwrap());
+        assert_eq!("BC",maze.pos_to_portal.get(&(2,8)).unwrap());
+        assert_eq!("AA",maze.pos_to_portal.get(&(9,2)).unwrap());
+        assert_eq!(None,maze.pos_to_portal.get(&(10,2)));
 
         // Check portal mapping
         assert_eq!(Pos::new(6,10), maze.get_portal( &Pos::new(2,13)).unwrap());
@@ -238,6 +282,98 @@ FG..#########.....#
 
         let res = maze.bfs();
         assert_eq!(23, res);
+    }
+    #[test]
+    fn test12() {
+        let input = "         A
+         A
+  #######.#########
+  #######.........#
+  #######.#######.#
+  #######.#######.#
+  #######.#######.#
+  #####  B    ###.#
+BC...##  C    ###.#
+  ##.##       ###.#
+  ##...DE  F  ###.#
+  #####    G  ###.#
+  #########.#####.#
+DE..#######...###.#
+  #.#########.###.#
+FG..#########.....#
+  ###########.#####
+             Z
+             Z";
+
+        let mut maze = Maze::new(input,true);
+        println!("{:?}",maze);
+
+        // Check start / end
+        assert_eq!(Pos::new(9,2), maze.start);
+        assert_eq!(Pos::new(13,16), maze.end);
+
+        // Check portals
+        assert_eq!((9,2), *maze.portals.get("AA").unwrap().get(0).unwrap());
+        assert_eq!((2,8), *maze.portals.get("BC").unwrap().get(0).unwrap());
+        assert_eq!((9,6), *maze.portals.get("BC").unwrap().get(1).unwrap());
+        assert_eq!((2,13), *maze.portals.get("DE").unwrap().get(0).unwrap());
+        assert_eq!((6,10), *maze.portals.get("DE").unwrap().get(1).unwrap());
+
+        // Check pos to portal
+        assert_eq!("DE",maze.pos_to_portal.get(&(2,13)).unwrap());
+        assert_eq!("DE",maze.pos_to_portal.get(&(6,10)).unwrap());
+        assert_eq!("BC",maze.pos_to_portal.get(&(9,6)).unwrap());
+        assert_eq!("BC",maze.pos_to_portal.get(&(2,8)).unwrap());
+        assert_eq!("AA",maze.pos_to_portal.get(&(9,2)).unwrap());
+        assert_eq!(None,maze.pos_to_portal.get(&(10,2)));
+
+        // Check portal mapping
+
+        // Outer portal DE on plane 0, should be a wall
+        assert_eq!(None, maze.get_portal( &Pos::new(2,13)));
+
+        // Outer portal DE on plane 2, should point to inner portal on plane 1
+        assert_eq!(Pos::new3d(6,10,1), maze.get_portal( &Pos::new3d(2,13,2)).unwrap());
+
+        // Inner portal BC on place 0, should point to outer portal BC on place 1
+        assert_eq!(Pos::new3d(2,8,1), maze.get_portal( &Pos::new(9,6)).unwrap());
+
+        assert_eq!(None, maze.get_portal( &Pos::new(9,2)));
+        assert_eq!(None, maze.get_portal( &Pos::new(10,2)));
+
+        let nodes1 = maze.get_adjacent(&Pos::new(9,6));
+        assert_eq!(vec![Pos::new3d(9,5,0),Pos::new3d(2,8,1)], nodes1);
+
+        let nodes2 = maze.get_adjacent(&Pos::new(9,2));
+        assert_eq!(vec![Pos::new3d(9,3,0)], nodes2);
+
+        let nodes3 = maze.get_adjacent(&Pos::new(2,13));
+        assert_eq!(vec![Pos::new3d(3,13,0)], nodes3);
+
+        let nodes4 = maze.get_adjacent(&Pos::new3d(2,13,1));
+        assert_eq!(vec![Pos::new3d(3,13,1), Pos::new3d(6,10,0)], nodes4);
+
+        let nodes5 = maze.get_adjacent(&Pos::new3d(11,12,1));
+        assert_eq!(vec![Pos::new3d(11,13,1), Pos::new3d(2,15,2)], nodes5);
+
+        let nodes6 = maze.get_adjacent(&Pos::new3d(13,13,1));
+        assert_eq!(vec![Pos::new3d(13,14,1), Pos::new3d(12,13,1)], nodes6);
+
+        // ZZ is a wall
+        let nodes7 = maze.get_adjacent(&Pos::new3d(13,16,1));
+        assert_eq!(vec![Pos::new3d(13,15,1)], nodes7);
+
+        // AA is a wall
+        let nodes8 = maze.get_adjacent(&Pos::new3d(9,2,1));
+        assert_eq!(vec![Pos::new3d(9,3,1)], nodes8);
+
+        // AA is a wall
+        let nodes9 = maze.get_adjacent(&Pos::new3d(9,2,0));
+        assert_eq!(vec![Pos::new3d(9,3,0)], nodes9);
+
+        assert_ne!(Pos::new3d(13,16,1), maze.end);
+        assert_eq!(Pos::new3d(13,16,0), maze.end);
+
     }
 
     #[test]
@@ -280,7 +416,7 @@ YN......#               VT..#....QG
            B   J   C
            U   P   P";
 
-        let maze = Maze::new(input);
+        let mut maze = Maze::new(input,false);
         println!("{:?}",maze);
 
         let res = maze.bfs();
@@ -416,13 +552,201 @@ PF..#.#.......#.....#.........#.#                                               
                                      J       A O     Q     N           Q   S   D
                                      O       A A     T     Z           O   U   A                                     ";
 
-        let maze = Maze::new(input);
+        let mut maze = Maze::new(input, false);
         println!("{:?}",maze);
 
         let res = maze.bfs();
         assert_eq!(552, res);
 
     }
+
+    #[test]
+    fn test_part2_test1() {
+        let input = "             Z L X W       C
+             Z P Q B       K
+  ###########.#.#.#.#######.###############
+  #...#.......#.#.......#.#.......#.#.#...#
+  ###.#.#.#.#.#.#.#.###.#.#.#######.#.#.###
+  #.#...#.#.#...#.#.#...#...#...#.#.......#
+  #.###.#######.###.###.#.###.###.#.#######
+  #...#.......#.#...#...#.............#...#
+  #.#########.#######.#.#######.#######.###
+  #...#.#    F       R I       Z    #.#.#.#
+  #.###.#    D       E C       H    #.#.#.#
+  #.#...#                           #...#.#
+  #.###.#                           #.###.#
+  #.#....OA                       WB..#.#..ZH
+  #.###.#                           #.#.#.#
+CJ......#                           #.....#
+  #######                           #######
+  #.#....CK                         #......IC
+  #.###.#                           #.###.#
+  #.....#                           #...#.#
+  ###.###                           #.#.#.#
+XF....#.#                         RF..#.#.#
+  #####.#                           #######
+  #......CJ                       NM..#...#
+  ###.#.#                           #.###.#
+RE....#.#                           #......RF
+  ###.###        X   X       L      #.#.#.#
+  #.....#        F   Q       P      #.#.#.#
+  ###.###########.###.#######.#########.###
+  #.....#...#.....#.......#...#.....#.#...#
+  #####.#.###.#######.#######.###.###.#.#.#
+  #.......#.......#.#.#.#.#...#...#...#.#.#
+  #####.###.#####.#.#.#.#.###.###.#.###.###
+  #.......#.....#.#...#...............#...#
+  #############.#.#.###.###################
+               A O F   N
+               A A D   M";
+
+        let mut maze = Maze::new(input,true);
+        println!("{:?}",maze);
+
+        let res = maze.bfs();
+        println!("{}",res);
+        assert_eq!(396, res);
+
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = "                                     X       H           D   Z O       K   W
+                                     N       O           W   Z S       L   F
+  ###################################.#######.###########.###.#.#######.###.#######################################
+  #.....#.........................#.....#.#...#...........#.#.....#.......#...............................#.....#.#
+  ###.#####.#.#####.#######.###.#####.###.#.#######.#####.#.#####.#######.###.###.###.###.#.#.###.#######.###.###.#
+  #.#...#...#.#.#.....#...#.#.#.#.......#...#.#.#.....#.#.#.....#...#.....#.#...#...#...#.#.#.#.......#...#.....#.#
+  #.#.#########.#########.###.#.###.#####.#.#.#.#.###.#.#.###.#.#.#.###.###.#####.###.#####.#####.###########.###.#
+  #.....#.#.....#.........#...........#.#.#.....#.#.#.#...#...#...#.#.......#.#.....#.#.#.#...#...#.#.#...#...#.#.#
+  #.#####.#####.###.#####.###.###.#.###.#####.#####.#.###.###.#########.#.###.###.#####.#.#########.#.#.###.###.#.#
+  #.....#...#.#...#...#.......#.#.#.......#.#.#.#.....#.#.#.........#...#.#.#...#.....#.#...#.#...#.#.#.....#.#...#
+  ###.#####.#.###.#######.###.#.#######.###.#.#.###.###.###.#####.#####.#.#.#.#.#.###.#.#.###.###.#.#.###.###.#.###
+  #.#.....#.#...#...#.#.#.#.#.#.#.......#.......#.........#.#...#.#.....#.#...#.#.#.........#.#.#...........#...#.#
+  #.#.#####.###.#.###.#.###.###.###.#.#.#.###.#####.###########.#.###.###.#.###.#.###.#.#.###.#.#.###.###.#####.#.#
+  #.......#.#.#.#...#.#...#.........#.#.#.#.....#.......#.#.#...#...#.#...#.#.....#.#.#.#...........#...#...#...#.#
+  ###.#.###.#.#.#.#.#.###.#########.###.#####.#####.#####.#.###.#.#######.#.#.#.###.#####.###.#.###############.#.#
+  #.#.#.#.......#.#.#...#.....#...#...#.#...#...#.....#.#...........#.....#.#.#.....#.#...#.#.#.#.#.....#.#...#...#
+  #.#.#########.###.#.#####.#####.#.#######.#.#.###.###.#######.#.#######.#.###.#####.###.#.#####.#.#.#.#.###.#.###
+  #...#...#.....................#.#...#.#.#...#.#...#...#.......#.#...#...#...#.....#...............#.#...#.....#.#
+  #.#.#.###.#.###.###.#####.#.#.#.#.###.#.#.#######.###.#####.###.###.###.#.###.###########.#.###.#########.###.#.#
+  #.#.#...#.#.#.#.#.....#...#.#.........#.#.#.#.#...#.....#.....#...#...#.#...#.#.....#...#.#.#.#.....#.#...#...#.#
+  #.###.#######.#####.#.#.#.###.#######.#.#.#.#.###.###.#.#.#####.###.#.#.###.###.#.#####.#####.#######.#######.#.#
+  #.....#...#.#...#.#.#.#.#.#...#.#.....#.#.#.#...#.....#.#.#.#.....#.#...#...#.#.#.#.....#...#.........#.......#.#
+  #.#######.#.###.#.###.#######.#.#.#####.#.#.#.#####.#######.#.#.###.#.#.#.###.#.#####.#.#.#########.#####.###.#.#
+  #.......#.....#...#...#.......#.........#...#...#.#.....#.....#.#...#.#.#.....#...#...#.#.........#...#.#.#...#.#
+  #.#########.###.#.#######.#########.#.#####.#.#.#.#####.#.#####.#.###########.#.###.#####.#.#######.#.#.#####.#.#
+  #.#...#.#.#...#.#.......#...#.#.#...#...#.#...#...#.....#...#.#.#...#.....#.#...#.........#...#.#...#...#.#.#...#
+  #.#.###.#.#.#######.###.#####.#.#######.#.#####.#####.#.###.#.###.#####.###.#.#.#.#.###.#.#####.###.#####.#.###.#
+  #...#.#.#...#.#...#.#.#.#.#...#.#.#.#.......#...#.#.#.#.#...#...#.......#.....#...#...#.#.#.....#.....#.#...#...#
+  #.###.#.#.#.#.###.###.#.#.###.#.#.#.###.###.#.#.#.#.###.#.###.###.#####.#######.###########.#.#####.###.###.###.#
+  #.#.#...#.#.....#...#.#.#.......#.......#.#.#.#.#.......#...#.#.....#.....#...#.........#.#.#.#.#.#.#.#.#.......#
+  #.#.###.###.#######.#.#.#####.###.#####.#.###.###.#.#.#####.#.###.#.#.#.#####.#.#########.###.#.#.#.#.#.###.#####
+  #.#.#.#.........#.........#.#.........#...#.....#.#.#.#.........#.#.#.#.#.......#...#...#.#.....#.#.#...#.......#
+  #.#.#.#####.###########.#.#.#.#######.#####.#####.###########.#######.###.#########.###.#.###.###.#.#.#.###.#####
+  #.....#...#.#.....#.#.#.#.#.#.#      S     K     H           R       I   H        #.#.......#.#.....#.#.#.....#.#
+  #####.###.#.#####.#.#.#.###.###      U     A     W           P       O   C        #.###.#####.###.#.###.###.###.#
+  #.#.#...#.....#.#...#...#.#...#                                                   #.....#...#...#.#.#.#...#...#.#
+  #.#.#.#####.###.###.###.#.#.###                                                   ###.#####.#.###.###.###.#.###.#
+  #.#...#...#.#...............#.#                                                 NZ..............#.............#.#
+  #.#.#####.#.###.#######.###.#.#                                                   #.###.#####.###.###.#.###.###.#
+KA....#.#.......#.#.......#.....#                                                   #.#.#.#.........#.#.#...#.....#
+  #.###.#####.#########.#######.#                                                   ###.#####.#.###.#.#.#########.#
+  #.......#...#.#.#.#.#.....#....DA                                                 #...#.#.#.#.#.....#.#.#...#.#..HC
+  ###.###.#.#.#.#.#.#.#####.###.#                                                   #.#.#.#.#########.#.#.#.###.###
+  #...#.....#...............#...#                                                   #.#.......#.#.#.#.#.#..........PZ
+  #.#####################.#.#.#.#                                                   #####.#.###.#.#.#####.#.###.#.#
+  #.#.......#.........#.#.#.#.#.#                                                   #.#...#...............#...#.#.#
+  ###.###.#.#.#######.#.#########                                                   #.###.#####.###.#.#########.###
+RO....#.#.#...#.#.#.....#.#.....#                                                   #...#...#.....#.#.#...#.#.#...#
+  ###.#.###.###.#.###.#.#.###.#.#                                                   ###.#.###########.#.###.#.#####
+  #.....#.#.#.#.#.#.#.#.....#.#.#                                                 XN......#.#.#...#.......#...#...#
+  #######.###.#.#.#.###.###.#.#.#                                                   #####.#.#.###.#.###.###.#.#.###
+  #...#.......#...#...#.#.....#..WF                                               TZ....#.#.......#.#...#...#.#.#.#
+  ###.###.#####.#####.###########                                                   ###.###.#.#.#####.#######.#.#.#
+TZ....#...#.....................#                                                   #.......#.#.#.#.....#...#.#.#..YK
+  ###.#.#.#.#######.###.#####.#.#                                                   ###.#.###.###.#######.###.#.#.#
+  #...#.#.#.....#...#.#.#...#.#.#                                                   #...#.#...#.......#.#...#.....#
+  ###.#.#.###.#######.###.#####.#                                                   #########.#.#.#####.#.###.###.#
+  #.#...#.......#.....#.#...#....QN                                                 #...#.#.....#.............#...#
+  #.###############.###.#.#####.#                                                   ###.#.###.#.###.#.#.#.#.#######
+  #...#.....#.#.......#...#.....#                                                   #.#.....#.#.#.#.#.#.#.#.#...#.#
+  #.###.#.#.#.#.#####.#.#.#####.#                                                   #.###.#######.###########.#.#.#
+  #.#.#.#.#...#...#...#.#...#.#.#                                                   #.#.......#.#.....#.....#.#....IO
+  #.#.#.#####.#.###.###.###.#.###                                                   #.###.###.#.#.#########.#.###.#
+  #.......#.......#.#.....#.....#                                                 JZ......#.........#.#.#.....#...#
+  #.###.#####.#####.#####.#.#####                                                   #########.###.###.#.###.#####.#
+DQ....#...#.....#.........#......JO                                                 #...#.#.#.#.................#.#
+  #.###.#####.###################                                                   ###.#.#.#######.#######.#######
+  #...#.#...#.#.....#.#...#.....#                                                   #.#...........#.#.....#...#...#
+  #####.###.#####.###.#.#.#.###.#                                                   #.#.#####.###.#####.#########.#
+RU....#.#.....#.#...#...#.#...#.#                                                 OS....#.#...#...#.....#.#...#.#.#
+  #.#######.###.#.#.#.###.###.#.#                                                   #.#.#.###.#.#.###.#.#.###.#.#.#
+  #...............#.....#.....#..QT                                                 #.#...#...#.#...#.#...#.#.....#
+  #.#######.#.###.###.###########                                                   ###.#.#####.#####.###.#.#.###.#
+  #.#.#.#...#.#...#.#...#.#.#...#                                                   #.#.#.#...#.........#.......#..QN
+  ###.#.###.#.###.#.#####.#.#.#.#                                                   #.#.#.###.#####################
+  #.#...#...#.#...#.#.#.#.....#.#                                                   #.#.#.#.............#.#...#.#..HW
+  #.#.#############.#.#.#####.#.#                                                   #.#####.#.#########.#.#.#.#.#.#
+  #.#.#...#.#...#.#.......#.#.#..DQ                                                 #.#.#...#.#...#.........#.....#
+  #.#.#.###.#.###.###.#.###.#.###                                                   #.#.#####.#.###.#####.#.###.###
+JZ....................#.........#                                                 QO....#.#.......#.#.#...#...#...#
+  ###.#########################.#                                                   ###.#.#.#.#######.###.###.#.#.#
+PF..#.#.......#.....#.........#.#                                                   #.......#...#...#.....#.#.#.#.#
+  #.###.###.#.#.###.#.#.###.#####                                                   #############.#####.#.#.#######
+  #.......#.#.....#...#.#.......#                                                   #...#...#...#...#...#.#.#...#.#
+  #.#.#.###.#.#####.#.###.#.#####                                                   #.#.#.#.#.###.#####.###.###.#.#
+  #.#.#...#.#.....#.#.#.#.#.#.#.#                                                 KL..#.#.#.#.....#...#.#.#.......#
+  #.#.###.#####.###.###.###.#.#.#                                                   ###.#.#.#.#.#####.###.#######.#
+  #.#...#...#...#...#............RU                                                 #...#.#...#...#.#.#.#...#.#.#..RP
+  #.#.###.###.###.#.#.#.#.#.###.#                                                   #.###.#.#.###.#.#.#.#.###.#.#.#
+  #.#...#.#.....#.#.#.#.#.#...#.#                                                   #.....#.#.#...................#
+  ###.###.#.###.###.###.###.###.#      D     P         Y         O     H   R   P    #.###.#######.#.#########.#.###
+  #...#...#.#...#.....#.#...#.#.#      W     Z         K         A     O   O   F    #.#.......#...#.....#.....#...#
+  #.#.###.###.###.#.#.#####.#.#########.#####.#########.#########.#####.###.###.#####.###.###.#.#.#.#######.#.#.###
+  #.#.#.....#...#.#.#.#.#.........#.........#.#...#.......#.......#.#...#.....#.....#.#.....#.#.#.#...#.#...#.#...#
+  ###.###.###.#.#.#.###.#.###.#.###.###.###.#.#.#.###.#.#.#####.###.#.#####.#.#.#.#.#########.#####.#.#.###.###.###
+  #.....#...#.#.#.#...#.....#.#.#.#.#...#.#.#...#...#.#.#.....#.#.........#.#.#.#.#.....#.#...#.#...#...#...#.....#
+  ###.#.#.#########.#######.#####.#######.#.#####.###.#.#######.###.#######.###.#.#######.#####.#####.#####.###.#.#
+  #...#.#.#.#.#.#.....#.#...#...............#...#...#.#.#...#.....#.....#...#...#...#.#.........#.........#...#.#.#
+  #.#.#.###.#.#.#.#####.#######.#.#.#.###.###.#.#.###.#####.#####.#.###.###.#.###.###.#.###########.###.#.###.#.#.#
+  #.#.#...#.......#.#...#...#...#.#.#.#.#...#.#...#.......#.......#.#.#.#.......#.......#.......#...#...#...#.#.#.#
+  #####.#########.#.#.###.#############.###.#.#######.###.#.#######.#.#####.###.#.#####.#####.#####.#.#.#.###.###.#
+  #.#.......#.......#.#...#.................#.#.....#...#.#.#.#.#.....#.......#.#.....#...........#.#.#.#...#...#.#
+  #.#.###.#.#########.#.#############.#######.#.###.###.###.#.#.###.#.###.#######.#####.#.#.#.#.#######.###.#.###.#
+  #.....#.#.#.....#...#...#.#...............#.#...#...#.#...#.....#.#...#.#.#.........#.#.#.#.#...#.......#.#...#.#
+  #.#.#####.#####.###.#.###.###############.#.###.#.###.###.#.###.#.#####.#.###.#####.###.###.#.#.###.#.#.#######.#
+  #.#...#.....#.#.....#.....#.....#.#.......#.....#.#.....#.....#.#...#...#...#...#.#...#...#.#.#.#...#.#.#.......#
+  #.#.#########.#####.#.#########.#.#.#######.#####.#.#.#.#.#.###.#.#########.#.###.#.###.#####.###.#.#.#########.#
+  #.#.#...#.....#...#.....#.#.#.........#.......#...#.#.#.#.#.#.#.#...#.....#.......#.#.....#.....#.#.#...#.......#
+  #.#####.#####.#.###.#.###.#.###.#.#.###.#.#.###.#.#.#####.###.#.#.#####.#######.#.###########.#####.#######.#.###
+  #.#.......#.........#.#.#.......#.#.#.#.#.#.#...#.#.#.#.....#...#...#.....#...#.#.#...#...#...#.#.#.....#...#...#
+  ###.###.#.#.#.#.#.#.#.#.#.###.#.###.#.###.#####.###.#.#########.#.###.#######.#.#####.###.###.#.#.#########.###.#
+  #.#...#.#...#.#.#.#.#...#.#.#.#...#.....#.#.......#...#.....#...#.......#.#.#...#.#...#.....#.#...#.....#.#.#...#
+  #.#.#.#.#.#.#.#######.#####.###.###.#########.###.#.#####.#####.#######.#.#.#.###.#.###.#######.#.#.#.#.#.#####.#
+  #.#.#.#.#.#.#.#.........#.........#.......#...#...#.....#...#...#.........#...........#.....#...#.#.#.#.#...#.#.#
+  #.#####.###.#########.#########.###.#######.#####.#####.###.###.###.#.#.#######.#.#####.#.#####.###.#####.###.#.#
+  #.......#.#.#.............#.....#...#.#.#.....#.#.#.....#...#.....#.#.#.#.....#.#...#.#.#...#...#...#.#.....#...#
+  #.#.#####.###.###.#.#####.#########.#.#.#.#####.#.#.#.#.###.###.###.#######.#.#.#####.#.#####.#####.#.###.#######
+  #.#...#.....#.#.#.#.#.#.........#.......#.#.#.#...#.#.#.#.......#...#...#.#.#.....................#...#.........#
+  #########.#.###.#####.###.#####.###.#######.#.###.#.#######.###.#.#####.#.#.###############.#.#####.###.#########
+  #.........#.........#.....#.........#...#.#...#...#...#...#.#...#.#.#.....................#.#...................#
+  ###.#.#####.#####.###.#.#####.#####.###.#.#.###.#.#.#.###.#.#####.#.###########.#######.#####.###.###########.###
+  #...#.#.......#.......#.#.......#.....#.........#.#.#.#.......#.......#...............#.....#.#...........#.....#
+  ###################################.#######.#.#####.#####.###########.###.###.###################################
+                                     J       A O     Q     N           Q   S   D
+                                     O       A A     T     Z           O   U   A                                     ";
+
+        let mut maze = Maze::new(input, true);
+        println!("{:?}",maze);
+        //println!("{:?}",maze.portals.get("AA").unwrap());
+        //println!("{:?}",maze.portals.get("ZZ").unwrap());
+
+        let res = maze.bfs();
+        assert_eq!(6492, res);
+
+    }
+
 
 
 
