@@ -1,5 +1,5 @@
 use crate::util::Part;
-use std::collections::{HashMap, BinaryHeap, VecDeque};
+use std::collections::{HashMap, BinaryHeap};
 
 pub fn solve(input:String, part:Part) -> String {
 
@@ -123,7 +123,7 @@ impl Maze {
         if max_z > self.levels {
             // Insert a new level
             let tmp = self.map.clone();
-            tmp.iter().filter(|(k,i)| k.z == 0).for_each(|(k,i)|{
+            tmp.iter().filter(|(k,_)| k.z == 0).for_each(|(k,i)|{
                self.map.insert( Pos::new3d(k.x,k.y, max_z), *i);
             });
             self.levels = max_z;
@@ -155,7 +155,7 @@ impl Maze {
 
     fn bfs(&mut self) -> i32 {
         let mut dist = HashMap::new();
-        let mut dist_target = 1_000_000;
+        let dist_target = 1_000_000;
         let mut queue= BinaryHeap::new();
 
         // Add start pos

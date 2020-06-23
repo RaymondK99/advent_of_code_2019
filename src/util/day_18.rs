@@ -221,7 +221,7 @@ impl Context {
     }
 
     fn get_key_pos(&self, key:char) -> Pos {
-        *self.map.iter().find(|(&a,&b)| b == key).unwrap().0
+        *self.map.iter().find(|(_,&b)| b == key).unwrap().0
     }
 
 }

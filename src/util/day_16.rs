@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn test_part2_test33() {
         let len = 651;
-        let mut period = 4;
+        let  period = 4;
 
     }
 

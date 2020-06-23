@@ -223,7 +223,7 @@ fn find_common_substrings(s:&str) -> HashSet<&str> {
 
 
 fn find_valid_permutations(s:&str) -> Vec<&str> {
-    let mut sub_strings:Vec<&str> = find_common_substrings(s).iter().map(|s| *s).collect();
+    let sub_strings:Vec<&str> = find_common_substrings(s).iter().map(|s| *s).collect();
     let mut solutions = vec![];
     println!("Found sub-strings:{:?}",sub_strings);
 
@@ -295,7 +295,7 @@ mod tests {
     fn test_common_substrings() {
         let s = "R,8,R,8,R,4,R,4,R,8,L,6,L,2,R,4,R,4,R,8,R,8,R,8,L,6,L,2";
 
-        let mut sub_strings = find_common_substrings(s);
+        let sub_strings = find_common_substrings(s);
 
         println!("Found sub-strings:{:?}",sub_strings);
 

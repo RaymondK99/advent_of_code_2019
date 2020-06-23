@@ -18,6 +18,7 @@ mod day_17;
 mod day_18;
 mod day_19;
 mod day_20;
+mod day_21;
 mod int_code_computer;
 
 pub enum Part {
@@ -49,6 +50,7 @@ pub fn get_solution(day:u8, part:Part, input:String) -> String {
         18 => day_18::solve(input, part),
         19 => day_19::solve(input, part),
         20 => day_20::solve(input, part),
+        21 => day_21::solve(input, part),
         _ => panic!("..."),
     }
 
