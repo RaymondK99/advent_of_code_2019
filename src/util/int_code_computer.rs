@@ -92,6 +92,10 @@ impl Program {
         self.inputs.len()
     }
 
+    pub fn get_input(&self) -> &Vec<i64> {
+        self.inputs.as_ref()
+    }
+
     pub fn run_until_output(&mut self, len:usize) -> Vec<i64> {
         let mut tmp = vec![];
         while tmp.len() < len {
@@ -245,6 +249,10 @@ impl Program {
             GetInput{param_mask,pos_out} => self.inputs.is_empty(),
             _ => false,
         }
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.inputs.is_empty() && self.needs_input()
     }
 
     pub fn add_input(&mut self, input:i64) {
