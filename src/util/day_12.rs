@@ -76,7 +76,7 @@ fn update_pos(planets:&mut Vec<Planet>) {
 }
 
 fn run_steps(planets:&mut Vec<Planet>,steps:i64) -> u64 {
-    for step in 0..steps {
+    for _ in 0..steps {
         update_velocity(planets);
         update_pos(planets);
     }
@@ -346,11 +346,6 @@ mod tests {
 
     #[test]
     fn test_part2_test2() {
-        let in1 = "<x=3, y=15, z=8>
-<x=5, y=-1, z=-2>
-<x=-10, y=8, z=2>
-<x=8, y=4, z=-5>";
-
         let input = "<x=-8, y=-10, z=0>
 <x=5, y=5, z=10>
 <x=2, y=-7, z=3>

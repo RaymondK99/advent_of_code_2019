@@ -24,10 +24,10 @@ fn part1(opcodes:Vec<i64>) -> usize {
 fn part2(opcodes:Vec<i64>) -> usize {
     let map = exec_paint_robot(opcodes, 1);
 
-    let max_x = map.iter().map(|(p,v)| p.x ).max().unwrap();
-    let max_y = map.iter().map(|(p,v)| p.y ).max().unwrap();
-    let min_x = map.iter().map(|(p,v)| p.x ).min().unwrap();
-    let min_y = map.iter().map(|(p,v)| p.y ).min().unwrap();
+    let max_x = map.iter().map(|(p,_)| p.x ).max().unwrap();
+    let max_y = map.iter().map(|(p,_)| p.y ).max().unwrap();
+    let min_x = map.iter().map(|(p,_)| p.x ).min().unwrap();
+    let min_y = map.iter().map(|(p,_)| p.y ).min().unwrap();
 
     let mut y = max_y;
     while y >= min_y {

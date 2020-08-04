@@ -747,7 +747,6 @@ mod tests {
         }
 
         program.print_outputs();
-
         println!("Map size:{:?}", map);
     }
 

@@ -34,7 +34,7 @@ fn part1(opcodes:Vec<i64>) -> usize {
         }
     }
 
-    map.iter().filter(|(&pos,&item)| item == 2).count()
+    map.iter().filter(|(_,&item)| item == 2).count()
 }
 
 
@@ -51,8 +51,6 @@ fn part2(opcodes:Vec<i64>) -> usize {
     let mut map:HashMap<(i64,i64),i64> = HashMap::new();
     let mut score = 0;
     let mut ball_x = -1;
-    let mut prev_ball_x = -1;
-    let  prev_ball_y = -1;
     let mut bar_x = -1;
 
     while !program.is_halted() {
@@ -71,7 +69,6 @@ fn part2(opcodes:Vec<i64>) -> usize {
             bar_x = x;
         } else if tile_id == 4 { // Ball
             println!("Ball is at x:{},y:{}", x,y);
-            prev_ball_x = ball_x;
             ball_x = x;
         }
 
@@ -93,7 +90,7 @@ fn part2(opcodes:Vec<i64>) -> usize {
 
     }
 
-    let num_blocks = map.iter().filter(|(&pos,&item)| item == 2).count();
+    let num_blocks = map.iter().filter(|(_,&item)| item == 2).count();
     println!("blocks = {}", num_blocks);
 
     score as usize
@@ -102,10 +99,10 @@ fn part2(opcodes:Vec<i64>) -> usize {
 
 fn draw(score:i64, map:&HashMap<(i64,i64),i64>) {
     let mut output = String::new();
-    let min_x = *map.iter().map(|((x,y),item)| x).min().unwrap();
-    let min_y = *map.iter().map(|((x,y),item)| y).min().unwrap();
-    let max_x = *map.iter().map(|((x,y),item)| x).max().unwrap();
-    let max_y = *map.iter().map(|((x,y),item)| y).max().unwrap();
+    let min_x = *map.iter().map(|((x,_),_)| x).min().unwrap();
+    let min_y = *map.iter().map(|((_,y),_)| y).min().unwrap();
+    let max_x = *map.iter().map(|((x,_),_)| x).max().unwrap();
+    let max_y = *map.iter().map(|((_,y),_)| y).max().unwrap();
 
     output.push_str(format!("Score: {}\n", score).as_str());
     for y in min_y..=max_y {

@@ -31,7 +31,7 @@ fn fft(input:Vec<i32>,steps:usize) -> String {
     let mut next_input = input.clone();
     next_input.insert(0,0);
 
-    for step in 1..(steps+1) {
+    for _ in 1..(steps+1) {
         let mut tmp = vec![];
         tmp.insert(0, 0);
         for n in 1..next_input.len()+1 {
@@ -52,33 +52,6 @@ fn fft(input:Vec<i32>,steps:usize) -> String {
     next_input.iter().map(|num| num.to_string()).collect::<String>()[..8].to_string()
 }
 
-fn test_period(input:Vec<i32>, times:usize) -> Vec<i32> {
-
-
-
-    // Calc out position
-    /*
-    let mut next_input = input.clone();
-    next_input.insert(0,0);
-    let mut smallest_input_period = vec![];
-    for i in 0..4* times {
-        next_input.iter().for_each(|s| smallest_input_period.push(*s));
-    }
-
-    let mut tmp = vec![];
-    for n in 1..smallest_input_period.len()+1 {
-        let new_value : i32 = (smallest_input_period.iter().enumerate()
-            .map(|(i, s)| s * get_base_pattern(i as u32, n as u32))
-            .sum::<i32>());
-
-        tmp.push(((new_value * (10_000 / 4)) % 10).abs() );
-    }
-
-    tmp
-
-     */
-    vec![]
-}
 
 fn to_vec(input:&str) -> Vec<i32> {
     let vector : Vec<i32> = input.chars().map( |ch| (ch as i32 - 0x30)).collect();
@@ -88,7 +61,7 @@ fn to_vec(input:&str) -> Vec<i32> {
 fn to_vec_times(input:&str,times:usize) -> Vec<i32> {
     let mut out:String = String::new();
 
-    for i in 0..times {
+    for _ in 0..times {
         out.push_str(input.trim());
     }
 
@@ -150,20 +123,6 @@ mod tests {
     }
 
 
-
-    #[test]
-    fn test_part2_test1() {
-        let input_str = "03036732577212944063491565474664";
-        let input = to_vec_times("03036732577212944063491565474664", 10);
-        let res = fft(input.clone(), 100);
-
-        println!("{:?}",res);
-
-        let res2 = test_period(to_vec(input_str), 10);
-
-        println!("{:?}", res2);
-    }
-
     #[test]
     fn test_part2_test2() {
         let input = to_vec_times(INPUT_DATA, 10);
@@ -172,24 +131,6 @@ mod tests {
         println!("{:?}",res);
     }
 
-    #[test]
-    fn test_part2_test33() {
-        let len = 651;
-        let  period = 4;
 
-    }
 
-    fn calc_times(index:i32, out_pos:i32, times:i32) {
-
-        // 1,2,3,4,5,6,8,9,10
-
-        // 0,1,0,-1,0  period = 4, occasions per input = 650 / 4 = 162, rest = 2
-        // 0,0,1,1,0,0,-1,-1 period = 8, occasions = 10_000 / 8 = 1250
-        // 0,0,0,1,1,1,0,0,0,-1,-1,-1 period = 12m, occasions  = 833, rest = 4
-
-       // let period = (out_pos+1) * 4;
-       // let occasions = times / period;
-       // let rest = times % period;
-
-    }
 }

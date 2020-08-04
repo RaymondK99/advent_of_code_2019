@@ -20,7 +20,7 @@ fn create_asteroid_list(input:String) -> Vec<Asteroid> {
     input.lines().enumerate().for_each( | (y, line)| {
         line.chars().enumerate()
             .filter(|(_,ch)| *ch == '#')
-            .for_each( |(x, ch)| {
+            .for_each( |(x, _)| {
             asteroids.push(Asteroid{x:x as i64, y:y as i64});
         })
     });
@@ -122,7 +122,6 @@ fn part1(asteroids:Vec<Asteroid>) -> usize {
 
 
 fn part2(asteroids:Vec<Asteroid>, target:i64) -> usize {
-    let num_asteroids = asteroids.len();
     let mut angle_map = check_visible(asteroids).unwrap();
     let mut num_destroyed = 0;
     let mut angles : Vec<i64> = angle_map.keys().map(|k| *k).collect::<Vec<i64>>();

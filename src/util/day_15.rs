@@ -165,7 +165,6 @@ fn bfs(mut map:HashMap<Pos,i64>, start_pos:Pos) -> HashMap<Pos,i64> {
 
         for n in 1..5 {
             let next = pos.next(&n);
-            let next_dist = dist + 1;
             if (*map.get(&next).unwrap() == 1 ||*map.get(&next).unwrap() == 2) && !dist_map.contains_key(&next) {
                 dist_map.insert(next.clone(), dist + 1);
                 queue.push(next);
@@ -180,7 +179,7 @@ fn bfs(mut map:HashMap<Pos,i64>, start_pos:Pos) -> HashMap<Pos,i64> {
 fn part1(opcodes:Vec<i64>) -> i64 {
     let mut program = Program::new(opcodes, None);
     let map= dfs(&mut program);
-    let dest_pos = map.iter().find(|(&p,&i)| i == 2).unwrap().0.clone();
+    let dest_pos = map.iter().find(|(_,&i)| i == 2).unwrap().0.clone();
     let dist_map = bfs(map, Pos{x:0,y:0});
     *dist_map.get(&dest_pos).unwrap()
 }
@@ -190,7 +189,7 @@ fn part1(opcodes:Vec<i64>) -> i64 {
 fn part2(opcodes:Vec<i64>) -> i64 {
     let mut program = Program::new(opcodes, None);
     let map = dfs(&mut program);
-    let start_pos = map.iter().find(|(&p,&i)| i == 2).unwrap().0.clone();
+    let start_pos = map.iter().find(|(_,&i)| i == 2).unwrap().0.clone();
     let dist_map = bfs(map, start_pos);
     *dist_map.values().max().unwrap()
 }

@@ -45,7 +45,7 @@ fn part2(input:String, iterations:i32) -> usize {
     map.insert(0, state);
 
     // Mutate state
-    for it in 0..iterations {
+    for _ in 0..iterations {
         let mut next_state = map.clone();
 
         i = level_min+1;
@@ -67,7 +67,7 @@ fn part2(input:String, iterations:i32) -> usize {
         map = next_state;
     }
 
-    map.iter().map(|(k,v)| count_bits(*v)).sum()
+    map.iter().map(|(_,v)| count_bits(*v)).sum()
 }
 
 fn count_bits(state:u32) -> usize {

@@ -14,7 +14,7 @@ pub fn solve(input:String, part:Part) -> String {
     format!("{}",result)
 }
 
-fn part1(opcodes:Vec<i64>) -> i32 {
+fn part1(_opcodes:Vec<i64>) -> i32 {
     1
 }
 
@@ -44,7 +44,7 @@ fn run_program(input:&str, opcodes:Vec<i64>) {
     println!("{}",out_str);
 }
 
-fn part2(opcodes:Vec<i64>) -> i32 {
+fn part2(_opcodes:Vec<i64>) -> i32 {
     2
 }
 

@@ -45,21 +45,18 @@ fn is_intersection(x:usize,y:usize,map:&HashMap<(usize,usize),i64>) -> bool {
         .filter( |item| item.is_some() && *item.unwrap() == 35 ).count() == points.len()
 }
 
-fn get_path(map:&HashMap<(usize,usize),i64>) {
-
-}
 
 fn part1(opcodes:Vec<i64>) -> i32 {
     let map = build_map(opcodes);
 
-    map.iter().filter(|((x,y),&item)| {
+    map.iter().filter(|((x,y),_)| {
             *x > 0 && *y > 0 && map.contains_key(&(*x+1,*y+1)) &&
             *map.get(&(*x,*y)).unwrap() == 35 &&
             *map.get(&(*x-1,*y)).unwrap() == 35 &&
             *map.get(&(*x+1,*y)).unwrap() == 35 &&
             *map.get(&(*x,*y-1)).unwrap() == 35 &&
             *map.get(&(*x,*y+1)).unwrap() == 35
-    }).map(|((x,y),&item)| *y * *x ).fold(0, |acc, n| acc + n)
+    }).map(|((x,y),_)| *y * *x ).fold(0, |acc, n| acc + n)
 }
 
 
@@ -79,7 +76,6 @@ fn next_step(current_pos:&(i32,i32), current_dir:char, map:&HashMap<(i32,i32),i6
         'F'
     };
 
-    let dst = (x,y);
     let len = if dir == '<' {
         let mut x1 = x-1;
         while x1 >= 0 && *map.get( &(x1,y)).unwrap() == 35 {
@@ -158,7 +154,7 @@ fn next_turn(current_dir:char, next_dir:char) -> char {
 fn part2(opcodes:Vec<i64>) -> i32 {
     let map = build_map(opcodes);
     let start_sym = [60,62,94,118];
-    let start_pair = map.iter().find(|((x,y), item)| start_sym.contains(item) ).unwrap();
+    let start_pair = map.iter().find(|((_,_), item)| start_sym.contains(item) ).unwrap();
     let start_sym = match *start_pair.1 {
         60 => '<',
         62 => '>',
@@ -171,7 +167,6 @@ fn part2(opcodes:Vec<i64>) -> i32 {
 
     let mut pos = start_pair.0.clone();
     let mut next_dir = start_sym;
-    let mut i = 0;
     let mut path = vec![];
     while next_dir != 'F' {
         let next = next_step(&pos, next_dir, &map);
@@ -182,7 +177,6 @@ fn part2(opcodes:Vec<i64>) -> i32 {
         next_dir = next.0;
         //println!("next step = {:?}, next pos = {:?}",next,pos);
 
-        i += 1;
     }
 
     //println!("{:?}", path);
@@ -202,7 +196,7 @@ fn part2(opcodes:Vec<i64>) -> i32 {
 
 fn find_common_substrings(s:&str) -> HashSet<&str> {
     let mut i = 0;
-    let mut j = 0;
+    let mut j ;
     let mut sub_strings = HashSet::new();
 
     while i < s.len() {

@@ -15,7 +15,7 @@ fn part1(input:&str) -> u64 {
     count_or_for_one_fuel(parse_input(input))
 }
 
-fn part2(input:&str) -> u64 {
+fn part2(_input:&str) -> u64 {
     2
 }
 
@@ -210,13 +210,6 @@ mod tests {
     #[test]
     fn test1() {
         println!("Test");
-        let input = "9 ORE => 2 A
-8 ORE => 3 B
-7 ORE => 5 C
-3 A, 4 B => 1 AB
-5 B, 7 C => 1 BC
-4 C, 1 A => 1 CA
-2 AB, 3 BC, 4 CA => 1 FUEL";
         let input = "3 A, 4 B => 1 AB";
         let reaction = parse_reaction(input);
         println!("{:?}",reaction);
