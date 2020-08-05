@@ -64,6 +64,8 @@ fn dijkstras(map:HashMap<Pos,char>) -> i32 {
     let start_pos = *map.iter().find(|&(_,v)| *v == '@').unwrap().0;
     let num_keys = map.iter().filter(|&(_,v)| v.is_ascii_lowercase()).count();
 
+    let mut iterations = 0;
+
     // Add first state
     let start_node = Node{ch:'@',pos:start_pos, keys:Vec::new()};
 
@@ -80,8 +82,11 @@ fn dijkstras(map:HashMap<Pos,char>) -> i32 {
         let (x,y) = (node.pos.x, node.pos.y);
         let dist = elem.distance;
 
+        iterations += 1;
+
         // Check if we reach exit criteria
         if node.keys.len() == num_keys {
+            println!("Iterations = {}",iterations);
             return dist;
         }
 

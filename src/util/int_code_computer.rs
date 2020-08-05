@@ -115,15 +115,15 @@ impl Program {
         let mask = (program[pc] - opcode) / 100;
 
         match opcode {
-            1 => Add {param_mask:mask, arg1:program[&(pc+1)], arg2:program[&(pc+2)],pos_out:program[&(pc+3)]},
-            2 => Mult {param_mask:mask, arg1:program[&(pc+1)], arg2:program[&(pc+2)],pos_out:program[&(pc+3)]},
-            3 => GetInput {param_mask:mask,pos_out:program[&(pc+1)]},
-            4 => PushOutput {param_mask:mask, pos_out:program[&(pc+1)]},
-            5 => JumpIfNotEqualToZero {param_mask:mask,arg1:program[&(pc+1)],arg2:program[&(pc+2)]},
-            6 => JumpIfEqualToZero {param_mask:mask,arg1:program[&(pc+1)],arg2:program[&(pc+2)]},
-            7 => SetIfLessThan {param_mask:mask, arg1:program[&(pc+1)], arg2:program[&(pc+2)],pos_out:program[&(pc+3)]},
-            8 => SetIfEqual {param_mask:mask, arg1:program[&(pc+1)], arg2:program[&(pc+2)],pos_out:program[&(pc+3)]},
-            9 => UpdateRelativeBase{param_mask:mask, arg1:program[&(pc+1)]},
+            1 => Add {param_mask:mask},
+            2 => Mult {param_mask:mask},
+            3 => GetInput {param_mask:mask},
+            4 => PushOutput {param_mask:mask},
+            5 => JumpIfNotEqualToZero {param_mask:mask},
+            6 => JumpIfEqualToZero {param_mask:mask},
+            7 => SetIfLessThan {param_mask:mask},
+            8 => SetIfEqual {param_mask:mask},
+            9 => UpdateRelativeBase{param_mask:mask},
             99 => HaltProgram,
             _ => Unknown,
         }
@@ -134,7 +134,7 @@ impl Program {
         let op = self.next_op();
         //println!("pc = {}, opcode={}, op = {:?}",self.pc, self.memory[&self.pc], op);
         match op {
-            Add {param_mask, arg1,arg2,pos_out} => {
+            Add {param_mask} => {
                 let arg1_val = self.get_param_value(param_mask, 1);
                 let arg2_val = self.get_param_value(param_mask, 2);
                 let out_location = self.get_param_address(param_mask, 3);
@@ -144,7 +144,7 @@ impl Program {
                 self.pc += 4;
 
             }
-            Mult {param_mask, arg1,arg2,pos_out} => {
+            Mult {param_mask} => {
                 let arg1_val = self.get_param_value(param_mask, 1);
                 let arg2_val = self.get_param_value(param_mask, 2);
                 let out_location = self.get_param_address(param_mask, 3);
@@ -154,7 +154,7 @@ impl Program {
                 self.pc += 4;
 
             }
-            GetInput {param_mask,pos_out} => {
+            GetInput {param_mask} => {
                 let out_location = self.get_param_address(param_mask, 1);
 
                 let value = self.inputs.remove(0);
@@ -163,7 +163,7 @@ impl Program {
                 //println!(" => Read to pos:{} as:{}",out_location, self.get_memory(out_location as usize));
             }
 
-            JumpIfNotEqualToZero {param_mask,arg1,arg2} => {
+            JumpIfNotEqualToZero {param_mask} => {
                 let arg1_val = self.get_param_value(param_mask, 1);
                 let arg2_val = self.get_param_value(param_mask, 2);
 
@@ -176,7 +176,7 @@ impl Program {
                 //println!(" => Set PC to {}", self.pc);
 
             },
-            JumpIfEqualToZero {param_mask,arg1,arg2} => {
+            JumpIfEqualToZero {param_mask} => {
                 let arg1_val = self.get_param_value(param_mask, 1);
                 let arg2_val = self.get_param_value(param_mask, 2);
 
@@ -186,7 +186,7 @@ impl Program {
                     self.pc += 3;
                 }
             },
-            SetIfLessThan {param_mask,arg1,arg2, pos_out} => {
+            SetIfLessThan {param_mask} => {
                 let arg1_val = self.get_param_value(param_mask, 1);
                 let arg2_val = self.get_param_value( param_mask, 2);
                 let output_pos = self.get_param_address(param_mask, 3);
@@ -198,7 +198,7 @@ impl Program {
                 }
                 self.pc += 4;
             },
-            SetIfEqual {param_mask,arg1,arg2, pos_out} => {
+            SetIfEqual {param_mask} => {
                 let arg1_val = self.get_param_value( param_mask, 1);
                 let arg2_val = self.get_param_value( param_mask, 2);
                 let output_pos = self.get_param_address(param_mask, 3);
@@ -210,14 +210,14 @@ impl Program {
                 self.pc += 4;
             },
 
-            PushOutput {param_mask, pos_out} => {
+            PushOutput {param_mask} => {
                 let out_value = self.get_param_value(param_mask, 1);
                 //println!(" => Push output as:{}", out_value);
                 self.outputs.push(out_value);
                 self.pc += 2;
             }
 
-            UpdateRelativeBase {param_mask, arg1} => {
+            UpdateRelativeBase {param_mask} => {
                 let arg1_val = self.get_param_value(param_mask, 1);
                 //println!(" => Update relative base from:{}, to:{}",self.relative_base, self.relative_base+arg1_val);
                 self.relative_base += arg1_val;
@@ -246,7 +246,7 @@ impl Program {
     pub fn needs_input(&self) -> bool {
         let next_op = self.next_op();
         match next_op {
-            GetInput{param_mask,pos_out} => self.inputs.is_empty(),
+            GetInput{param_mask} => self.inputs.is_empty(),
             _ => false,
         }
     }
@@ -305,15 +305,15 @@ impl Program {
 
 #[derive(Debug)]
 enum Operation {
-    Add {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
-    Mult {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
-    GetInput {param_mask:i64, pos_out:i64},
-    PushOutput {param_mask:i64,pos_out:i64},
-    JumpIfNotEqualToZero {param_mask:i64,arg1:i64,arg2:i64},
-    JumpIfEqualToZero {param_mask:i64,arg1:i64,arg2:i64},
-    SetIfLessThan {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
-    SetIfEqual {param_mask:i64, arg1:i64,arg2:i64,pos_out:i64},
-    UpdateRelativeBase{param_mask:i64, arg1:i64},
+    Add {param_mask:i64},
+    Mult {param_mask:i64},
+    GetInput {param_mask:i64},
+    PushOutput {param_mask:i64},
+    JumpIfNotEqualToZero {param_mask:i64},
+    JumpIfEqualToZero {param_mask:i64},
+    SetIfLessThan {param_mask:i64},
+    SetIfEqual {param_mask:i64},
+    UpdateRelativeBase{param_mask:i64},
     HaltProgram,
     Unknown,
 }

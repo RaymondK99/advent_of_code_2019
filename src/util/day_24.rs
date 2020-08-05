@@ -120,7 +120,7 @@ fn next_state(state:u32) -> u32 {
             0
         };
 
-        let mut adjacent = [up,down,left,right].iter().filter(|item| **item > 0).count();
+        let adjacent = [up,down,left,right].iter().filter(|item| **item > 0).count();
         let has_bug = (state & 1 << n) > 0;
 
         //println!("Pos:{}, up:{},down:{},left:{},right:{}", n, up>0,down>0,left>0,right>0);
